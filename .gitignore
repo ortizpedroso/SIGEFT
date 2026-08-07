@@ -1,0 +1,39 @@
+# Arquivos de configuração de ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependências do Node.js
+/frontend/node_modules
+/.pnp
+.pnp.js
+
+# Build do Next.js
+/frontend/.next/
+/frontend/out/
+
+# Arquivos de cache e de sistema do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Ambientes virtuais do Python
+/backend/venv
+/backend/.venv
+/backend/env
+
+# Arquivos de build do TypeScript
+*.tsbuildinfo
+
+# Arquivos de sistema operacional
+.DS_Store
+
+# Arquivos de IDE
+.vscode/
+.idea/

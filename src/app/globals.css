@@ -1,0 +1,307 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base Dark Theme (TJRR Executive Dark Canvas) */
+:root {
+  --bg-main: #060b18;
+  --text-main: #f8fafc;
+  --card-bg: #0f172a;
+  --card-border: rgba(255, 255, 255, 0.1);
+  --accent-primary: #2563eb; /* Azul Institucional TJRR */
+  --accent-secondary: #059669; /* Verde Roraima */
+  --accent-gold: #d97706; /* Dourado / Amarelo da Justiça TJRR */
+  --accent-danger: #e11d48;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Light Theme Overrides (TJRR Executive Judicial Light Canvas) */
+html.light body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Structural Backgrounds - TJRR Judicial Navy & Clean Cards */
+html.light .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+html.light .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/40,
+html.light .bg-slate-900\/90 {
+  background-color: #ffffff !important;
+}
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/90 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Typography Hierarchy */
+html.light .text-white {
+  color: #0f172a !important;
+}
+html.light .text-slate-100 {
+  color: #1e293b !important;
+}
+html.light .text-slate-200 {
+  color: #334155 !important;
+}
+html.light .text-slate-300 {
+  color: #475569 !important;
+}
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Borders and Dividers */
+html.light .border-white\/10,
+html.light .border-white\/5 {
+  border-color: #e2e8f0 !important;
+}
+html.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+/* Shadows */
+html.light .shadow-xl,
+html.light .shadow-2xl {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02) !important;
+}
+
+/* Inputs, Selects, Textareas */
+html.light input:not([type="range"]), 
+html.light select, 
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+html.light input::placeholder, 
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Range Slider Styling - Enhanced Visibility for Dark & Light Themes */
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  background-color: #334155; /* Slate-700 track in dark mode */
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html.light .range-slider {
+  background-color: #cbd5e1 !important; /* Slate-300 track in light mode */
+  border: 1px solid #94a3b8 !important;
+}
+
+/* Category Specific Slider Thumbs & Accent Colors */
+/* 1. Slider Blue (Volume) */
+.range-slider-blue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-blue::-webkit-slider-thumb {
+  background: #1d4ed8;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+.range-slider-blue::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-blue::-moz-range-thumb {
+  background: #1d4ed8;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+
+/* 2. Slider Emerald (Complexidade) */
+.range-slider-emerald::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #059669;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-emerald::-webkit-slider-thumb {
+  background: #047857;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+.range-slider-emerald::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #059669;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-emerald::-moz-range-thumb {
+  background: #047857;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+
+/* 3. Slider Amber (Criticidade) */
+.range-slider-amber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #d97706;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-amber::-webkit-slider-thumb {
+  background: #b45309;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+.range-slider-amber::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #d97706;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-amber::-moz-range-thumb {
+  background: #b45309;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+
+/* 4. Slider Rose (Tolerância) */
+.range-slider-rose::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #e11d48;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-rose::-webkit-slider-thumb {
+  background: #be123c;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+.range-slider-rose::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #e11d48;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+html.light .range-slider-rose::-moz-range-thumb {
+  background: #be123c;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+}
+
+/* Accent Badges & Tinted Boxes in Light Mode - TJRR Colors */
+html.light .bg-indigo-500\/10,
+html.light .bg-indigo-950\/20,
+html.light .bg-indigo-950\/50,
+html.light .bg-blue-500\/10,
+html.light .bg-blue-950\/40,
+html.light .bg-blue-600\/20 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+html.light .text-indigo-300,
+html.light .text-indigo-400,
+html.light .text-blue-300,
+html.light .text-blue-400,
+html.light .text-blue-500 {
+  color: #1d4ed8 !important;
+}
+
+html.light .bg-emerald-500\/10,
+html.light .bg-emerald-950\/10,
+html.light .bg-emerald-950\/20,
+html.light .bg-emerald-950\/30,
+html.light .bg-emerald-950\/40 {
+  background-color: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+html.light .text-emerald-300,
+html.light .text-emerald-400 {
+  color: #047857 !important;
+}
+
+html.light .bg-amber-500\/10,
+html.light .bg-amber-950\/10,
+html.light .bg-amber-950\/20,
+html.light .bg-amber-950\/40,
+html.light .bg-amber-950\/50 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+html.light .text-amber-300,
+html.light .text-amber-400 {
+  color: #b45309 !important;
+}
+
+html.light .bg-rose-500\/10,
+html.light .bg-rose-950\/10,
+html.light .bg-rose-950\/20,
+html.light .bg-rose-950\/30,
+html.light .bg-rose-950\/40,
+html.light .bg-rose-950\/50 {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+}
+html.light .text-rose-300,
+html.light .text-rose-400 {
+  color: #be123c !important;
+}
+
+/* Interactive Hover States */
+html.light .hover\:bg-white\/5:hover {
+  background-color: #f1f5f9 !important;
+}
+

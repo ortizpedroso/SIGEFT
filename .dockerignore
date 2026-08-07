@@ -1,0 +1,9 @@
+.venv
+node_modules
+.env
+*.pyc
+__pycache__/
+**/__pycache__
+
+# Ignore stray Dockerfile in root if present
+Dockerfile

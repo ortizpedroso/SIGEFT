@@ -1,0 +1,6 @@
+{
+  "name": "SIGEP-Força",
+  "description": "Sistema de Gestão do Dimensionamento da Força de Trabalho — TJRR (SUBGFT, Resolução CNJ nº 219/2016 & Metodologia DFT MGI/UnB)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
