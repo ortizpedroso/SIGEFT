@@ -1,8 +1,8 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.11-review
-**Data:** 2026-08-07
+**Versão:** 1.3.15-review
+**Data:** 2026-08-08
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
 ---
@@ -142,4 +142,8 @@ UUID como PK. snake_case. Integridade referencial com FK.
 | 1.3.9-review | 2026-08-07 | Aplicação da paleta institucional do TJRR (`#2563eb`, `#059669`, `#d97706`) e regras de alto contraste em Modo Claro/Escuro na página de "Unidades e Quantitativo Ideal por Setor" (`unidades/page.tsx`): botões de ação, filtros de diagnóstico, cartões de lotação ideal/déficit e formulários modais. |
 | 1.3.10-review | 2026-08-07 | Reformulação visual dos cartões de Unidade e Quantitativo Ideal em `unidades/page.tsx`: selos com brilho/sombra para Apoio Direto/Indireto, badges de status de diagnóstico (Déficit, Excesso, Lotação Ideal) com ícones direcionais, container interno de dimensionamento e pill da pontuação IPS. |
 | 1.3.11-review | 2026-08-07 | Padronização visual completa dos cartões de Unidade (`unidades/page.tsx`) com o padrão de Entregas & Capacidades (`entregas/page.tsx`): grid de métricas operacionais em container interno escuro (`bg-slate-950/60`), rodapé técnico com linha divisória e valor de destaque IPS. |
+| 1.3.12-review | 2026-08-08 | Alinhamento rigoroso da identidade visual com as diretrizes normativas do NUCRI/TJRR: Cor Principal (Azul Escuro Institucional `#2563eb`/`#1d4ed8`/`#0b1329`), Contraste (Branco puro `#ffffff`) e Cores de Apoio (Amarelo/Dourado `#d97706` e Verde Roraima `#059669`). Padronização de botões, ficos, modais, emblemas e gráficos em todos os módulos (`entregas`, `ponderacao`, `relatorios-sei`, `simulacao`, `login`, `Navbar` e `DashboardCharts`). |
+| 1.3.13-review | 2026-08-08 | Padronização dos selos, badges e tags de status (ex: "Apoio Indireto", "Apoio Direto", "Déficit", "Excesso", "Margem OK") substituindo bordas ovais/pílulas (`rounded-full`) por retângulos de cantos suavizados (`rounded-lg`/`rounded-md`) em todas as páginas do sistema (`unidades`, `entregas`, `ponderacao`, `relatorios-sei`, `page` e `DashboardCharts`). |
+| 1.3.14-review | 2026-08-08 | Ajustes de responsividade mobile e alinhamento visual geral: implementação do menu navegacional dropdown drawer com botão hambúrguer (`Menu`/`X`) no `Navbar`, ajuste de margens e espaçamentos dos containers principais (`px-4 sm:px-6 lg:px-10`), e alinhamento do módulo de Alocação de Esforço com a paleta institucional do TJRR. |
+| 1.3.15-review | 2026-08-08 | Adequação da identidade visual do topo (`Navbar.tsx`) para o Azul Escuro Institucional do TJRR (`#0b1736`), distanciamento e divisor visual entre os links de navegação e o botão de alternância Claro/Escuro, e aprimoramento completo do contraste de texto e cartões de resultado da análise no Modo Claro na página de Simulação Q₃/Mediana (`simulacao/page.tsx` e `globals.css`). |
 

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { dbStore } from '@/lib/db';
 import { Esforco } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const esforcos = dbStore.getEsforcosPopulated();
   return NextResponse.json(esforcos);

@@ -90,13 +90,13 @@ export default function DashboardCharts({
         className={`rounded-2xl border p-6 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4 ${
           alertaCnj
             ? 'border-rose-500/40 bg-rose-950/20 text-rose-200'
-            : 'border-indigo-500/30 bg-indigo-950/20 text-indigo-200'
+            : 'border-blue-500/30 bg-blue-950/20 text-blue-200'
         }`}
       >
         <div className="flex items-start gap-4">
           <div
             className={`p-3 rounded-2xl shrink-0 ${
-              alertaCnj ? 'bg-rose-500/20 text-rose-300' : 'bg-indigo-500/20 text-indigo-300'
+              alertaCnj ? 'bg-rose-500/20 text-rose-300' : 'bg-blue-500/20 text-blue-300'
             }`}
           >
             {alertaCnj ? <AlertTriangle className="w-7 h-7" /> : <ShieldCheck className="w-7 h-7" />}
@@ -105,7 +105,7 @@ export default function DashboardCharts({
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               Análise de Conformidade CNJ nº 219/2016
               <span
-                className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-extrabold border ${
+                className={`text-[10px] px-2 py-0.5 rounded-md uppercase font-extrabold border ${
                   alertaCnj
                     ? 'border-rose-500/40 bg-rose-900/40 text-rose-300'
                     : 'border-emerald-500/40 bg-emerald-900/40 text-emerald-300'
@@ -138,14 +138,14 @@ export default function DashboardCharts({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-indigo-400" />
+                  <BarChart3 className="w-5 h-5 text-blue-500" />
                   Dimensionamento: Lotação Atual vs. Lotação Ideal
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Comparação do quantitativo de servidores existente x paradigma calculado por unidade
+                  Comparação do quantitativo de servidores existente x paradigma calculated por unidade
                 </p>
               </div>
-              <span className="text-[11px] font-semibold text-indigo-300 bg-indigo-950/50 px-2.5 py-1 rounded-lg border border-indigo-500/30">
+              <span className="text-[11px] font-semibold text-blue-300 bg-blue-950/50 px-2.5 py-1 rounded-lg border border-blue-500/30">
                 Modelo MGI
               </span>
             </div>
@@ -174,7 +174,7 @@ export default function DashboardCharts({
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                  <Bar dataKey="servidores_atuais" name="Lotação Atual" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="servidores_atuais" name="Lotação Atual" fill="#2563eb" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="lotacao_ideal" name="Lotação Ideal (Calculada)" fill="#10b981" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -228,7 +228,7 @@ export default function DashboardCharts({
           <div className="space-y-2 mt-2 pt-4 border-t border-white/5 text-xs">
             <div className="flex items-center justify-between text-slate-300">
               <span className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-blue-600 inline-block" />
                 Apoio Direto (Jurisdicional)
               </span>
               <span className="font-bold">{(100 - pctEsforcoIndireto).toFixed(1)}%</span>

@@ -242,22 +242,20 @@ html.light .range-slider-rose::-moz-range-thumb {
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
 }
 
-/* Accent Badges & Tinted Boxes in Light Mode - TJRR Colors */
-html.light .bg-indigo-500\/10,
-html.light .bg-indigo-950\/20,
-html.light .bg-indigo-950\/50,
+/* Accent Badges & Tinted Boxes in Light Mode - TJRR Executive Contrast */
 html.light .bg-blue-500\/10,
+html.light .bg-blue-950\/20,
 html.light .bg-blue-950\/40,
+html.light .bg-blue-950\/50,
 html.light .bg-blue-600\/20 {
   background-color: #eff6ff !important;
   border-color: #bfdbfe !important;
 }
-html.light .text-indigo-300,
-html.light .text-indigo-400,
+html.light .text-blue-200,
 html.light .text-blue-300,
 html.light .text-blue-400,
 html.light .text-blue-500 {
-  color: #1d4ed8 !important;
+  color: #1e40af !important; /* Dark Blue for high contrast */
 }
 
 html.light .bg-emerald-500\/10,
@@ -268,22 +266,25 @@ html.light .bg-emerald-950\/40 {
   background-color: #f0fdf4 !important;
   border-color: #bbf7d0 !important;
 }
+html.light .text-emerald-200,
 html.light .text-emerald-300,
 html.light .text-emerald-400 {
-  color: #047857 !important;
+  color: #065f46 !important; /* Dark Emerald for high contrast */
 }
 
 html.light .bg-amber-500\/10,
 html.light .bg-amber-950\/10,
 html.light .bg-amber-950\/20,
+html.light .bg-amber-950\/30,
 html.light .bg-amber-950\/40,
 html.light .bg-amber-950\/50 {
   background-color: #fffbeb !important;
   border-color: #fde68a !important;
 }
+html.light .text-amber-200,
 html.light .text-amber-300,
 html.light .text-amber-400 {
-  color: #b45309 !important;
+  color: #92400e !important; /* Dark Amber/Gold for high contrast */
 }
 
 html.light .bg-rose-500\/10,
@@ -295,9 +296,10 @@ html.light .bg-rose-950\/50 {
   background-color: #fff1f2 !important;
   border-color: #fecdd3 !important;
 }
+html.light .text-rose-200,
 html.light .text-rose-300,
 html.light .text-rose-400 {
-  color: #be123c !important;
+  color: #9f1239 !important; /* Dark Red/Rose for high contrast */
 }
 
 /* Interactive Hover States */

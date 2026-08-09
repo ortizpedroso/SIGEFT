@@ -113,7 +113,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-6 py-10 lg:px-10 w-full">
+      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -129,7 +129,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold border ${
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border ${
               apiOnline
                 ? "border-emerald-500/30 bg-emerald-950/30 text-emerald-300"
                 : "border-rose-500/30 bg-rose-950/30 text-rose-300"

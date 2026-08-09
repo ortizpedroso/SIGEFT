@@ -97,12 +97,12 @@ export default function PonderacaoPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-6 py-10 lg:px-10 w-full">
+      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Sliders className="w-7 h-7 text-indigo-400" />
+              <Sliders className="w-7 h-7 text-blue-500" />
               Motor de Ponderação e Ajuste de Pesos (SUBGFT)
             </h1>
             <p className="text-sm text-slate-400 mt-1">
@@ -113,7 +113,7 @@ export default function PonderacaoPage() {
           <button
             onClick={handleSaveConfig}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-indigo-500 active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95 disabled:opacity-50"
           >
             <Sparkles className="w-4 h-4" />
             {saving ? 'Aplicando...' : 'Salvar e Recalcular Todos'}
@@ -269,7 +269,7 @@ export default function PonderacaoPage() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-white/10">
-              <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full inline-block border border-emerald-500/20">
+              <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg inline-block border border-emerald-500/20">
                 Auditoria de Pesos Ativa
               </span>
             </div>
@@ -300,16 +300,16 @@ export default function PonderacaoPage() {
                   <tr key={u.id} className="hover:bg-white/5 transition-colors">
                     <td className="p-4 font-bold text-white">{u.nome}</td>
                     <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border ${
                         u.tipo === 'apoio_indireto' 
                           ? 'bg-amber-950/40 text-amber-300 border-amber-500/30'
-                          : 'bg-indigo-950/40 text-indigo-300 border-indigo-500/30'
+                          : 'bg-blue-950/40 text-blue-300 border-blue-500/30'
                       }`}>
                         {u.tipo === 'apoio_indireto' ? 'Apoio Indireto' : 'Apoio Direto'}
                       </span>
                     </td>
                     <td className="p-4 text-center font-semibold text-slate-200">{u.servidores_atuais}</td>
-                    <td className="p-4 text-center font-bold text-indigo-300">{u.lotacaoPonderada}</td>
+                    <td className="p-4 text-center font-bold text-blue-300">{u.lotacaoPonderada}</td>
                     <td className={`p-4 text-center font-bold ${
                       u.diffPonderado < 0 ? 'text-rose-400' : u.diffPonderado > 0 ? 'text-amber-400' : 'text-emerald-400'
                     }`}>
@@ -318,12 +318,12 @@ export default function PonderacaoPage() {
                     <td className="p-4 text-center font-semibold text-slate-300">{u.desvioPct}%</td>
                     <td className="p-4 text-right">
                       {u.foraDaTolerancia ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-300 bg-rose-950/50 border border-rose-500/40 px-2.5 py-1 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-300 bg-rose-950/50 border border-rose-500/40 px-2.5 py-1 rounded-lg">
                           <AlertCircle className="w-3.5 h-3.5" />
                           Gatilho Desvio ({'>'}20%)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-1 rounded-lg">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           Margem OK
                         </span>

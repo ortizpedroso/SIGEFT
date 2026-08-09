@@ -172,7 +172,7 @@ export default function LoginPage() {
           <div className="lg:col-span-5 rounded-2xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-md flex flex-col justify-between">
             <div>
               <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-indigo-400" />
+                <KeyRound className="w-4 h-4 text-blue-400" />
                 Contas Pré-Configuradas
               </h2>
               <p className="text-xs text-slate-400 mb-4">
@@ -184,13 +184,13 @@ export default function LoginPage() {
                   <button
                     key={acc.email}
                     onClick={() => selectPredefinedAccount(acc)}
-                    className="w-full text-left rounded-xl border border-white/5 bg-slate-950/60 p-3.5 transition-all hover:border-indigo-500/40 hover:bg-indigo-950/20 group"
+                    className="w-full text-left rounded-xl border border-white/5 bg-slate-950/60 p-3.5 transition-all hover:border-blue-500/40 hover:bg-blue-950/20 group"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-200 group-hover:text-indigo-300">
+                      <span className="font-semibold text-xs text-slate-200 group-hover:text-blue-300">
                         {acc.nome}
                       </span>
-                      <UserCheck className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400" />
+                      <UserCheck className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400" />
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">{acc.email}</p>
                     <p className="text-[10px] text-slate-500 mt-1 italic">{acc.desc}</p>

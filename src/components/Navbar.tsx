@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, Package, Sliders, FileText, Sun, Moon } from 'lucide-react';
+import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, Package, Sliders, FileText, Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StoredUser {
@@ -16,6 +16,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<StoredUser | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -27,6 +28,11 @@ export default function Navbar() {
         setUser(null);
       }
     }
+  }, [pathname]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
   }, [pathname]);
 
   const handleLogout = () => {
@@ -46,27 +52,29 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-screen-xl items-center justify-between px-6 py-3">
+    <header className="sticky top-0 z-50 border-b border-blue-500/25 bg-[#0b1736] text-white shadow-lg shadow-blue-950/40 backdrop-blur-md">
+      <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 sm:px-6 py-3">
         
         {/* Brand / Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-800 via-blue-600 to-amber-400 text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
-            <ShieldCheck className="h-6 w-6 text-amber-300" />
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-amber-400 text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
+            <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-amber-300" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-bold text-white tracking-tight">SIGEP-Força</span>
-              <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-400 border border-blue-500/20">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-sm sm:text-base font-bold text-white tracking-tight">SIGEP-Força</span>
+              <span className="rounded-md bg-amber-400/10 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30">
                 TJRR · SUBGFT
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-medium">Dimensionamento da Força de Trabalho · CNJ 219 & DFT/MGI</p>
+            <p className="text-[10px] sm:text-[11px] text-blue-200/90 font-medium hidden sm:block">
+              Dimensionamento da Força de Trabalho · CNJ 219 & DFT/MGI
+            </p>
           </div>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-white/5">
+        {/* Desktop Navigation Links */}
+        <nav className="hidden xl:flex items-center gap-1 bg-[#071026]/80 p-1.5 rounded-2xl border border-blue-500/20">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -76,8 +84,8 @@ export default function Navbar() {
                 href={item.href}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-blue-700 text-white shadow-md shadow-blue-700/30'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                    : 'text-blue-200/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -87,35 +95,57 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* User Auth & Theme Toggle Section */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Tablet Navigation Links (Medium screens) */}
+        <nav className="hidden md:flex xl:hidden items-center gap-1 bg-[#071026]/80 p-1 rounded-xl border border-blue-500/20">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.label}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                    : 'text-blue-200/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden lg:inline">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right Actions: Theme Toggle, Profile & Mobile Menu Button */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5 ml-2 sm:ml-4 pl-2 sm:pl-3 border-l border-blue-500/20">
           {/* Light / Dark Mode Toggle */}
           <button
             onClick={toggleTheme}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 border border-white/10 text-slate-300 hover:text-amber-400 hover:border-amber-400/30 transition-all active:scale-95 shadow-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#071026]/90 border border-blue-400/30 text-amber-300 hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm"
             title={theme === 'dark' ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
           >
             {theme === 'dark' ? (
-              <Sun className="h-4 w-4 text-amber-400" />
+              <Sun className="h-4 w-4 text-amber-300" />
             ) : (
-              <Moon className="h-4 w-4 text-indigo-400" />
+              <Moon className="h-4 w-4 text-amber-300" />
             )}
           </button>
 
           {user ? (
-            <div className="flex items-center gap-3 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-white/10">
-
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300">
-                <User className="h-4 w-4" />
+            <div className="flex items-center gap-2 sm:gap-3 bg-[#071026]/90 px-2.5 py-1.5 rounded-xl border border-blue-500/20">
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-300">
+                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
               <div className="hidden sm:block text-left text-xs">
-                <p className="font-semibold text-slate-200">{user.email.split('@')[0]}</p>
-                <p className="text-[10px] uppercase font-bold text-indigo-400">{user.perfil_dft}</p>
+                <p className="font-semibold text-slate-100">{user.email.split('@')[0]}</p>
+                <p className="text-[10px] uppercase font-bold text-amber-400">{user.perfil_dft}</p>
               </div>
               <button
                 onClick={handleLogout}
                 title="Sair do sistema"
-                className="ml-1 text-slate-400 hover:text-rose-400 transition-colors p-1"
+                className="text-slate-400 hover:text-rose-400 transition-colors p-1"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -123,15 +153,64 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-3.5 py-2 text-xs font-semibold text-indigo-300 transition-all hover:bg-indigo-600 hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 text-xs font-semibold shadow-md shadow-blue-600/30 transition-all"
             >
               <LogIn className="h-4 w-4" />
-              Entrar
+              <span className="hidden sm:inline">Entrar</span>
             </Link>
           )}
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl bg-[#071026]/90 border border-blue-400/30 text-blue-200 hover:bg-blue-600 hover:text-white transition-all active:scale-95"
+            aria-label="Abrir menu de navegação"
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
 
       </div>
+
+      {/* Mobile Navigation Dropdown Drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-blue-500/20 bg-[#071026] px-4 py-4 space-y-2 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+          <div className="text-[10px] uppercase font-bold tracking-wider text-blue-300/80 px-3 mb-1">
+            Menu de Navegação
+          </div>
+          <div className="grid grid-cols-1 gap-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 text-amber-300 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {user && (
+            <div className="pt-3 border-t border-blue-500/20 mt-2 px-3 flex items-center justify-between text-xs text-blue-200">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-amber-300" />
+                <span>Logado como: <strong className="text-white">{user.email}</strong> ({user.perfil_dft})</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }
+

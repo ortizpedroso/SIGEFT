@@ -107,12 +107,12 @@ export default function EntregasPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-6 py-10 lg:px-10 w-full">
+      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Package className="w-7 h-7 text-indigo-400" />
+              <Package className="w-7 h-7 text-blue-500" />
               Mapeamento de Entregas e Capacidade Produtiva
             </h1>
             <p className="text-sm text-slate-400 mt-1">
@@ -121,7 +121,7 @@ export default function EntregasPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-indigo-500 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             Nova Entrega / Serviço
@@ -145,14 +145,14 @@ export default function EntregasPage() {
               placeholder="Buscar por entrega ou norma de referência..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-900/60 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <select
             value={unidadeFilter}
             onChange={(e) => setUnidadeFilter(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none"
+            className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
           >
             <option value="todas">Todas as Unidades</option>
             {unidades.map((u) => (
@@ -186,7 +186,7 @@ export default function EntregasPage() {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg">
                         {item.unidade?.nome || 'Unidade Administrativa'}
                       </span>
                       <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
@@ -266,7 +266,7 @@ export default function EntregasPage() {
                     value={unidadeId}
                     onChange={(e) => setUnidadeId(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   >
                     {unidades.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -286,7 +286,7 @@ export default function EntregasPage() {
                     onChange={(e) => setNome(e.target.value)}
                     placeholder="Ex: Análise de Contratos, Minuta de Julgamento..."
                     required
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -300,7 +300,7 @@ export default function EntregasPage() {
                     onChange={(e) => setFonte(e.target.value)}
                     placeholder="Ex: Plano Diretor, Manual de Atribuições SGP..."
                     required
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -315,7 +315,7 @@ export default function EntregasPage() {
                       min="0.5"
                       value={cargaHoraria}
                       onChange={(e) => setCargaHoraria(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                     />
                   </div>
 
@@ -328,7 +328,7 @@ export default function EntregasPage() {
                       min="1"
                       value={volumeMensal}
                       onChange={(e) => setVolumeMensal(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -343,7 +343,7 @@ export default function EntregasPage() {
                       step="0.1"
                       value={absenteismo}
                       onChange={(e) => setAbsenteismo(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                     />
                   </div>
 
@@ -356,7 +356,7 @@ export default function EntregasPage() {
                       step="0.1"
                       value={rotatividade}
                       onChange={(e) => setRotatividade(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -372,7 +372,7 @@ export default function EntregasPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+                    className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600 shadow-md shadow-blue-700/20"
                   >
                     {submitting ? 'Salvando...' : 'Cadastrar e Calcular'}
                   </button>

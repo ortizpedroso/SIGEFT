@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { dbStore } from '@/lib/db';
 import { Entrega } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const entregas = dbStore.getEntregasWithUnidade();
   return NextResponse.json(entregas);

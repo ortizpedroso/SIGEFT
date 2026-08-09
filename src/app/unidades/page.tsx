@@ -100,7 +100,7 @@ export default function UnidadesPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-6 py-10 lg:px-10 w-full">
+      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -206,7 +206,7 @@ export default function UnidadesPage() {
                     {/* Header Badges */}
                     <div className="flex items-center justify-between mb-3">
                       <span
-                        className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                        className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
                           isIndireto
                             ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
                             : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
@@ -216,7 +216,7 @@ export default function UnidadesPage() {
                       </span>
 
                       <span
-                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
                           isDeficit
                             ? 'text-rose-400 bg-rose-500/10 border-rose-500/20'
                             : isExcesso

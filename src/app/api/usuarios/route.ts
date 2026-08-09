@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { dbStore } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const usuarios = dbStore.usuarios.map((u) => {
     const uni = dbStore.unidades.find((un) => un.id === u.unidade_id);

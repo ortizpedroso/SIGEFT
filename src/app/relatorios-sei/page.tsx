@@ -83,12 +83,12 @@ export default function RelatoriosSEIPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-6 py-10 lg:px-10 w-full">
+      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <FileText className="w-7 h-7 text-indigo-400" />
+              <FileText className="w-7 h-7 text-blue-500" />
               Instrução Processual e Emissão de Minutas SEI (TJRR)
             </h1>
             <p className="text-sm text-slate-400 mt-1">
@@ -98,7 +98,7 @@ export default function RelatoriosSEIPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-indigo-500 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             Emite Parecer Técnico SEI
@@ -106,8 +106,8 @@ export default function RelatoriosSEIPage() {
         </div>
 
         {/* Info Banner */}
-        <div className="mb-8 p-5 rounded-2xl border border-indigo-500/30 bg-indigo-950/20 text-slate-300 text-xs leading-relaxed flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+        <div className="mb-8 p-5 rounded-2xl border border-blue-500/30 bg-blue-950/20 text-slate-300 text-xs leading-relaxed flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold text-white block mb-0.5">Integração de Governança com o SEI TJRR</span>
             Elimina a etapa manual de transcrição do levantamento estatístico. As minutas já nascem formatadas com fundamentação na Resolução CNJ nº 219/2016, Resolução CNJ nº 553/2024 e Metodologia DFT (MGI/UnB) para rápida autuação administrativa.
@@ -130,7 +130,7 @@ export default function RelatoriosSEIPage() {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
                   <div>
-                    <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">
+                    <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">
                       {p.numeroProcessoSEI}
                     </span>
                     <h3 className="text-lg font-bold text-white mt-2 flex items-center gap-2">
@@ -148,7 +148,7 @@ export default function RelatoriosSEIPage() {
                       className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
                         copiedId === p.id
                           ? 'border-emerald-500 bg-emerald-950/60 text-emerald-300'
-                          : 'border-indigo-500/30 bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white'
+                          : 'border-blue-500/30 bg-blue-600/20 text-blue-300 hover:bg-blue-600 hover:text-white'
                       }`}
                     >
                       {copiedId === p.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -172,8 +172,8 @@ export default function RelatoriosSEIPage() {
                     <p className="text-sm font-bold text-white mt-0.5">{p.servidoresAtuais} servidores</p>
                   </div>
                   <div>
-                    <p className="text-indigo-400 uppercase font-bold">Lotação Ideal SIGEP</p>
-                    <p className="text-sm font-bold text-indigo-300 mt-0.5">{p.lotacaoIdealCalculada} servidores</p>
+                    <p className="text-blue-400 uppercase font-bold">Lotação Ideal SIGEP</p>
+                    <p className="text-sm font-bold text-blue-300 mt-0.5">{p.lotacaoIdealCalculada} servidores</p>
                   </div>
                   <div>
                     <p className="text-slate-500 uppercase font-bold">Diagnóstico SIGEP</p>
@@ -212,7 +212,7 @@ export default function RelatoriosSEIPage() {
                     value={unidadeId}
                     onChange={(e) => setUnidadeId(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   >
                     {unidades.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -231,7 +231,7 @@ export default function RelatoriosSEIPage() {
                     value={processoSEI}
                     onChange={(e) => setProcessoSEI(e.target.value)}
                     placeholder="Ex: SEI 0010293-84.2026.8.23.8000"
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -244,7 +244,7 @@ export default function RelatoriosSEIPage() {
                     value={analista}
                     onChange={(e) => setAnalista(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -257,7 +257,7 @@ export default function RelatoriosSEIPage() {
                     onChange={(e) => setRecomendacao(e.target.value)}
                     placeholder="Ex: Sugere-se o remanejamento emergencial de 2 analistas administrativos para recompor o déficit da unidade..."
                     rows={3}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -272,7 +272,7 @@ export default function RelatoriosSEIPage() {
                   <button
                     type="submit"
                     disabled={generating}
-                    className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+                    className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600 shadow-md shadow-blue-700/20"
                   >
                     {generating ? 'Gerando Minuta...' : 'Gerar Parecer SEI'}
                   </button>
