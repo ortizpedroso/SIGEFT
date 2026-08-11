@@ -1,8 +1,8 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.15-review
-**Data:** 2026-08-08
+**Versão:** 1.3.16-review
+**Data:** 2026-08-11
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
 ---
@@ -146,4 +146,6 @@ UUID como PK. snake_case. Integridade referencial com FK.
 | 1.3.13-review | 2026-08-08 | Padronização dos selos, badges e tags de status (ex: "Apoio Indireto", "Apoio Direto", "Déficit", "Excesso", "Margem OK") substituindo bordas ovais/pílulas (`rounded-full`) por retângulos de cantos suavizados (`rounded-lg`/`rounded-md`) em todas as páginas do sistema (`unidades`, `entregas`, `ponderacao`, `relatorios-sei`, `page` e `DashboardCharts`). |
 | 1.3.14-review | 2026-08-08 | Ajustes de responsividade mobile e alinhamento visual geral: implementação do menu navegacional dropdown drawer com botão hambúrguer (`Menu`/`X`) no `Navbar`, ajuste de margens e espaçamentos dos containers principais (`px-4 sm:px-6 lg:px-10`), e alinhamento do módulo de Alocação de Esforço com a paleta institucional do TJRR. |
 | 1.3.15-review | 2026-08-08 | Adequação da identidade visual do topo (`Navbar.tsx`) para o Azul Escuro Institucional do TJRR (`#0b1736`), distanciamento e divisor visual entre os links de navegação e o botão de alternância Claro/Escuro, e aprimoramento completo do contraste de texto e cartões de resultado da análise no Modo Claro na página de Simulação Q₃/Mediana (`simulacao/page.tsx` e `globals.css`). |
+| 1.3.16-review | 2026-08-11 | Criação da página oculta de documentação completa do sistema (`/documentacao`): detalhamento de todos os módulos operacionais, fundamentação jurídica (CNJ 219/2016 e MGI/UnB), tabela analítica de equações matemáticas (Lotação Ideal, Balanço, Teto CNJ 30%, Capacidade Produtiva, Ponderação Multidimensional, Q₃ Benchmark, Mediana Fallback e Trava 100%), exemplos numéricos passo a passo e dicionário de dados. |
+| 1.3.17-review | 2026-08-11 | Ajuste de justificativa do texto (`text-justify`) em todas as seções descritivas da página `/documentacao` e aprimoramento do contraste da seção "5. Exemplos Práticos de Cálculo Passo a Passo", utilizando cartões internos escuros (`bg-slate-900/90`), texto de alto contraste (`text-slate-100`/`text-slate-200`) e bordas temáticas de destaque em Azul, Âmbar e Rosa alinhadas ao sistema. |
 
