@@ -154,6 +154,36 @@ html.light .bg-slate-950\/90 {
   background-color: #e2e8f0 !important;
 }
 
+/* Integração: selos OK/Problema e mensagens legíveis nos dois temas */
+html.light .pagina-integracao .bg-emerald-500\/10 {
+  background-color: #d1fae5 !important;
+}
+html.light .pagina-integracao .bg-rose-500\/10 {
+  background-color: #ffe4e6 !important;
+}
+html.light .pagina-integracao .bg-blue-500\/10 {
+  background-color: #dbeafe !important;
+}
+html.light .pagina-integracao .bg-emerald-600,
+html.light .pagina-integracao .bg-rose-600,
+html.light .pagina-integracao .bg-blue-700 {
+  color: #ffffff !important;
+}
+html.light .pagina-integracao .text-rose-300 {
+  color: #9f1239 !important;
+}
+html.light .pagina-integracao .text-emerald-400 {
+  color: #047857 !important;
+}
+html.light .pagina-integracao .text-amber-400,
+html.light .pagina-integracao .text-amber-500 {
+  color: #b45309 !important;
+}
+html.light .pagina-integracao .text-blue-300,
+html.light .pagina-integracao .text-blue-400 {
+  color: #1d4ed8 !important;
+}
+
 html.light main .text-white {
   color: #0f172a !important;
 }

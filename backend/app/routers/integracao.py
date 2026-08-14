@@ -94,9 +94,9 @@ CONECTORES = [
         "precisa_url": True,
         "precisa_chave": True,
         "kind": "sandbox",
-        "path": "/health",
-        "descricao": "Consulta/autuação de processos. URL sandbox + token de API.",
-        "dica_falha": "Peça à STI a URL do sandbox SEI e o token. Libere o IP da VPS (187.77.240.125) no firewall deles.",
+        "path": "/sei/health",
+        "descricao": "Consulta/autuação de processos. Usa a API de integração salva acima.",
+        "dica_falha": "Peça à STI a URL e a chave da API. Libere o IP da VPS no firewall deles.",
     },
     {
         "id": "folha",
@@ -105,9 +105,9 @@ CONECTORES = [
         "precisa_url": True,
         "precisa_chave": True,
         "kind": "sandbox",
-        "path": "/health",
-        "descricao": "Quantitativo real de servidores (lotação atual). URL sandbox + chave.",
-        "dica_falha": "Peça à SGP/RH a URL sandbox da folha e a chave. Sem isso o dimensionamento usa só o cadastro local.",
+        "path": "/folha/health",
+        "descricao": "Quantitativo real de servidores (lotação atual).",
+        "dica_falha": "Confira se a API de integração expõe /folha/health e se a chave tem permissão de RH.",
     },
     {
         "id": "unidades_ext",
@@ -116,9 +116,9 @@ CONECTORES = [
         "precisa_url": True,
         "precisa_chave": True,
         "kind": "sandbox",
-        "path": "/health",
+        "path": "/unidades/health",
         "descricao": "Sincroniza secretarias/varas com o catálogo institucional (opcional).",
-        "dica_falha": "Se não houver API de organograma, deixe em branco e cadastre em Unidades.",
+        "dica_falha": "Se a API não tiver organograma, ignore este item e cadastre em Unidades.",
     },
     {
         "id": "sso",
@@ -127,17 +127,19 @@ CONECTORES = [
         "precisa_url": True,
         "precisa_chave": True,
         "kind": "sandbox",
-        "path": "/health",
+        "path": "/auth/health",
         "descricao": "Login institucional (opcional). Enquanto ausente, vale o login local.",
-        "dica_falha": "URL do IdP sandbox e client secret. HTTP 401 = chave inválida.",
+        "dica_falha": "HTTP 401 = chave inválida. Sem SSO o login local do Métrica continua valendo.",
     },
 ]
 
+GLOBAL_KEY = "INTEGRACAO_API"
+
 
 class ConectorIn(BaseModel):
-    id: str
     sandbox_url: str = Field(default="", max_length=500)
     api_key: Optional[str] = Field(default=None, max_length=2000)
+    id: Optional[str] = None
 
 
 class TesteIn(BaseModel):
@@ -146,10 +148,6 @@ class TesteIn(BaseModel):
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def _cfg_key(conector_id: str) -> str:
-    return f"INTEGRACAO_{conector_id}"
 
 
 def _validate_sandbox_url(url: str) -> str:
@@ -173,34 +171,34 @@ def _mask_key(key: str) -> str:
     return f"••••{key[-4:]}"
 
 
-def _load_creds(db: Session, conector_id: str) -> dict:
-    row = db.query(ConfigTexto).filter(ConfigTexto.chave == _cfg_key(conector_id)).first()
-    if not row or not row.valor:
-        env_url = os.getenv(f"INTEGRACAO_{conector_id.upper()}_URL", "").strip()
-        env_key = os.getenv(f"INTEGRACAO_{conector_id.upper()}_KEY", "").strip()
-        return {"sandbox_url": env_url, "api_key": env_key}
-    try:
-        data = json.loads(row.valor)
-        return {
-            "sandbox_url": str(data.get("sandbox_url") or ""),
-            "api_key": str(data.get("api_key") or ""),
-        }
-    except json.JSONDecodeError:
-        return {"sandbox_url": row.valor, "api_key": ""}
+def _load_global(db: Session) -> dict:
+    row = db.query(ConfigTexto).filter(ConfigTexto.chave == GLOBAL_KEY).first()
+    if row and row.valor:
+        try:
+            data = json.loads(row.valor)
+            return {
+                "sandbox_url": str(data.get("sandbox_url") or ""),
+                "api_key": str(data.get("api_key") or ""),
+            }
+        except json.JSONDecodeError:
+            return {"sandbox_url": row.valor, "api_key": ""}
+    env_url = (os.getenv("INTEGRACAO_SANDBOX_URL") or os.getenv("INTEGRACAO_SEI_URL") or "").strip()
+    env_key = (os.getenv("INTEGRACAO_SANDBOX_KEY") or os.getenv("INTEGRACAO_SEI_KEY") or "").strip()
+    return {"sandbox_url": env_url, "api_key": env_key}
 
 
-def _save_creds(db: Session, conector_id: str, url: str, api_key: Optional[str]) -> dict:
-    current = _load_creds(db, conector_id)
+def _save_global(db: Session, url: str, api_key: Optional[str]) -> dict:
+    current = _load_global(db)
     if api_key is None:
         key = current["api_key"]
     else:
         key = api_key.strip()
     payload = json.dumps({"sandbox_url": url, "api_key": key})
-    row = db.query(ConfigTexto).filter(ConfigTexto.chave == _cfg_key(conector_id)).first()
+    row = db.query(ConfigTexto).filter(ConfigTexto.chave == GLOBAL_KEY).first()
     if row:
         row.valor = payload
     else:
-        db.add(ConfigTexto(chave=_cfg_key(conector_id), valor=payload))
+        db.add(ConfigTexto(chave=GLOBAL_KEY, valor=payload))
     return {"sandbox_url": url, "api_key": key}
 
 
@@ -291,9 +289,15 @@ def _run_local(db: Session, item: dict) -> tuple[str, str, str]:
 
 def _run_sandbox(item: dict, url: str, api_key: str) -> tuple[str, str, str]:
     if item.get("precisa_url") and not url:
-        return "aguardando", "Informe a URL sandbox e clique em Salvar e testar.", ""
+        msg = "Cole a URL da API de integração e a chave, depois clique em Salvar."
+        if item.get("obrigatorio"):
+            return "falha", msg, ""
+        return "aguardando", "Opcional: salve a API de integração para testar este canal.", ""
     if item.get("precisa_chave") and not api_key:
-        return "aguardando", "Informe a chave de API e clique em Salvar e testar. O teste roda na hora.", ""
+        msg = "Cole a chave da API de integração e clique em Salvar. O teste roda na hora."
+        if item.get("obrigatorio"):
+            return "falha", msg, ""
+        return "aguardando", "Opcional: informe a chave da API para testar este canal.", ""
     path = item.get("path") or "/health"
     target = urljoin(url.rstrip("/") + "/", path.lstrip("/"))
     headers = {}
@@ -320,31 +324,25 @@ def _test_one(db: Session, item: dict) -> None:
     if item["kind"] == "local":
         st, det, ev = _run_local(db, item)
     else:
-        creds = _load_creds(db, item["id"])
+        creds = _load_global(db)
         st, det, ev = _run_sandbox(item, creds["sandbox_url"], creds["api_key"])
     _upsert_check(db, item["id"], st, det, ev)
 
 
 def _payload(db: Session) -> dict:
     rows = {r.id: r for r in db.query(IntegracaoCheck).all()}
+    creds = _load_global(db)
     items = []
     for item in CONECTORES:
-        creds = _load_creds(db, item["id"]) if item["kind"] != "local" else {"sandbox_url": "", "api_key": ""}
         saved = _parse_check(rows.get(item["id"]))
         if item["kind"] == "local":
             st, det, ev = _run_local(db, item)
             saved = {"status": st, "detalhe": det, "evidencia": ev, "testado_em": _now()}
             _upsert_check(db, item["id"], st, det, ev)
         elif saved["status"] == "pendente":
-            # Não dispara HTTP no GET: só classifica falta de URL/chave.
-            st, det, ev = "aguardando", None, None
-            if item.get("precisa_url") and not creds["sandbox_url"]:
-                det = "Informe a URL sandbox e clique em Salvar e testar."
-            elif item.get("precisa_chave") and not creds["api_key"]:
-                det = "Informe a chave de API e clique em Salvar e testar. O teste roda na hora."
-            else:
-                det = "Credenciais gravadas. Clique em Salvar e testar (ou Testar agora) para validar."
-            saved = {"status": st, "detalhe": det, "evidencia": ev, "testado_em": None}
+            if not creds["sandbox_url"] or (item.get("precisa_chave") and not creds["api_key"]):
+                st, det, ev = _run_sandbox(item, creds["sandbox_url"], creds["api_key"])
+                saved = {"status": st, "detalhe": det, "evidencia": ev, "testado_em": None}
         items.append(
             {
                 "id": item["id"],
@@ -354,9 +352,6 @@ def _payload(db: Session) -> dict:
                 "precisa_url": item["precisa_url"],
                 "precisa_chave": item["precisa_chave"],
                 "kind": item["kind"],
-                "sandbox_url": creds["sandbox_url"],
-                "api_key_masked": _mask_key(creds["api_key"]),
-                "has_key": bool(creds["api_key"]),
                 "status": saved["status"],
                 "detalhe": saved["detalhe"],
                 "evidencia": saved["evidencia"],
@@ -365,15 +360,11 @@ def _payload(db: Session) -> dict:
             }
         )
     ok = sum(1 for i in items if i["status"] == "ok")
-    obrigatorios = [i for i in items if i["obrigatorio"]]
-    ok_obrig = sum(1 for i in obrigatorios if i["status"] == "ok")
     return {
-        "resumo": {
-            "ok": ok,
-            "total": len(items),
-            "obrigatorios_ok": ok_obrig,
-            "obrigatorios_total": len(obrigatorios),
-        },
+        "sandbox_url": creds["sandbox_url"],
+        "api_key_masked": _mask_key(creds["api_key"]),
+        "has_key": bool(creds["api_key"]),
+        "resumo": {"ok": ok, "total": len(items)},
         "items": items,
     }
 
@@ -391,17 +382,19 @@ def save_conector(
     db: Session = Depends(get_db),
     _user: Usuario = Depends(require_roles("gestor")),
 ):
-    item = next((c for c in CONECTORES if c["id"] == payload.id), None)
-    if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integração desconhecida.")
-    if item["kind"] == "local":
-        _test_one(db, item)
-        db.commit()
-        return _payload(db)
+    if payload.id:
+        item = next((c for c in CONECTORES if c["id"] == payload.id), None)
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integração desconhecida.")
+        if item["kind"] == "local":
+            _test_one(db, item)
+            db.commit()
+            return _payload(db)
     url = _validate_sandbox_url(payload.sandbox_url)
-    _save_creds(db, item["id"], url, payload.api_key)
+    _save_global(db, url, payload.api_key)
     db.commit()
-    _test_one(db, item)
+    for item in CONECTORES:
+        _test_one(db, item)
     db.commit()
     return _payload(db)
 

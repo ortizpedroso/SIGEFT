@@ -17,9 +17,9 @@ const navItems = [
   { href: '/unidades', label: 'Unidades', icon: Building2 },
   { href: '/entregas', label: 'Entregas', icon: Package },
   { href: '/esforcos', label: 'Esforços', icon: Users },
-  { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
-  { href: '/simulacao', label: 'Q₃', icon: BarChart3 },
+  { href: '/simulacao', label: 'Simulação', icon: BarChart3 },
   { href: '/ponderacao', label: 'Ponderação', icon: Sliders },
+  { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
   { href: '/integracao', label: 'Integração', icon: Link2 },
 ];
 

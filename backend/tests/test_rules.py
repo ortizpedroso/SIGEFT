@@ -244,8 +244,8 @@ def test_integracao_checklist_local_e_sandbox_aguardando(client: TestClient, db:
     by_get = {item["id"]: item for item in body["items"]}
     assert by_get["metrica"]["status"] == "ok"
     assert by_get["local_unidades"]["status"] == "ok"
-    assert by_get["sei"]["status"] == "aguardando"
-    assert by_get["sei"]["precisa_chave"] is True
+    assert by_get["sei"]["status"] == "falha"
+    assert "API de integração" in (by_get["sei"]["detalhe"] or "")
 
     tested = client.post("/api/integracao/testar", headers=headers, json={})
     assert tested.status_code == 200
@@ -253,24 +253,25 @@ def test_integracao_checklist_local_e_sandbox_aguardando(client: TestClient, db:
     by_id = {item["id"]: item for item in after["items"]}
     assert by_id["metrica"]["status"] == "ok"
     assert by_id["local_unidades"]["status"] == "ok"
-    assert by_id["sei"]["status"] == "aguardando"
+    assert by_id["sei"]["status"] == "falha"
 
     bad = client.post(
         "/api/integracao",
         headers=headers,
-        json={"id": "sei", "sandbox_url": "javascript:alert(1)"},
+        json={"sandbox_url": "javascript:alert(1)"},
     )
     assert bad.status_code == 400
 
     saved = client.post(
         "/api/integracao",
         headers=headers,
-        json={"id": "sei", "sandbox_url": "https://sandbox.example.invalid", "api_key": "token-teste-1234"},
+        json={"sandbox_url": "https://sandbox.example.invalid", "api_key": "token-teste-1234"},
     )
     assert saved.status_code == 200
-    saved_body = {item["id"]: item for item in saved.json()["items"]}
-    assert saved_body["sei"]["has_key"] is True
-    assert saved_body["sei"]["api_key_masked"].endswith("1234")
+    saved_json = saved.json()
+    assert saved_json["has_key"] is True
+    assert saved_json["api_key_masked"].endswith("1234")
+    saved_body = {item["id"]: item for item in saved_json["items"]}
     assert saved_body["sei"]["status"] in ("falha", "ok")
     if saved_body["sei"]["status"] == "falha":
         assert saved_body["sei"]["detalhe"]
