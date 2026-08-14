@@ -264,13 +264,24 @@ export default function DocumentacaoPage() {
                 </div>
 
                 {/* Módulo 7 */}
-                <div className="rounded-xl border border-white/10 bg-slate-950/50 p-5 space-y-2 md:col-span-2">
+                <div className="rounded-xl border border-white/10 bg-slate-950/50 p-5 space-y-2">
                   <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
                     <FileText className="w-4 h-4" />
                     <span>Minutas SEI &amp; Pareceres Técnicos (`/relatorios-sei`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
                     Geração automatizada de pareceres técnicos e minutas administrativas no padrão SEI (Sistema Eletrônico de Informações). Apresenta a fundamentação do desvio percentual apurado em relação à Lotação Paradigma e formata o parecer formal pronto para submissão à Presidência do Tribunal com recomendações de remanejamento.
+                  </p>
+                </div>
+
+                {/* Módulo 8 */}
+                <div className="rounded-xl border border-white/10 bg-slate-950/50 p-5 space-y-2">
+                  <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
+                    <FileText className="w-4 h-4" />
+                    <span>Integração (`/integracao`)</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed text-justify">
+                    Painel dos canais de governança: SEI TJRR (encaminha à Instrução SEI), cadastro local de unidades/quantitativo e enquadramento normativo MGI/CNJ 219. Não substitui o módulo de minutas e não envia processo automaticamente ao SEI neste MVP.
                   </p>
                 </div>
               </div>

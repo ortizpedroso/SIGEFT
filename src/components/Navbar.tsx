@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, Package, Sliders, FileText, Sun, Moon, Menu, X } from 'lucide-react';
+import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StoredUser {
@@ -52,7 +52,8 @@ export default function Navbar() {
     { href: '/entregas', label: 'Entregas & Capacidade', icon: Package },
     { href: '/esforcos', label: 'Esforços', icon: Users },
     { href: '/ponderacao', label: 'Motor de Ponderação', icon: Sliders },
-    { href: '/relatorios-sei', label: 'Integração SEI', icon: FileText },
+    { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
+    { href: '/integracao', label: 'Integração', icon: Link2 },
     { href: '/simulacao', label: 'Simulação Q₃', icon: BarChart3 },
   ];
 
