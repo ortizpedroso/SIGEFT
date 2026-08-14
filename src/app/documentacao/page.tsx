@@ -37,32 +37,31 @@ export default function DocumentacaoPage() {
       <Navbar />
 
       <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
-        {/* Banner de Topo */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 p-6 sm:p-8 mb-8 shadow-2xl">
+        {/* Banner de Topo — contraste travado em .doc-hero (claro e escuro) */}
+        <div className="doc-hero relative overflow-hidden rounded-2xl border p-6 sm:p-8 mb-8 shadow-2xl">
           <div className="relative z-10">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-400 border border-blue-500/20">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="doc-hero-chip doc-hero-chip-blue inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5" />
                 Documentação Oficial TJRR / SUBGFT
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-400 border border-amber-500/20">
-                <Scale className="w-3.5 h-3.5 text-amber-400" />
+              <span className="doc-hero-chip doc-hero-chip-amber inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold">
+                <Scale className="w-3.5 h-3.5" />
                 CNJ 219/2016 &amp; MGI / UnB
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
+              <span className="doc-hero-chip doc-hero-chip-green inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold">
                 Página Oculta de Referência (`/documentacao`)
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              <BookOpen className="w-8 h-8 text-blue-500 shrink-0" />
+            <h1 className="doc-hero-title text-2xl sm:text-3xl font-black tracking-tight flex items-start gap-3">
+              <BookOpen className="doc-hero-icon w-8 h-8 shrink-0 mt-0.5" />
               Documentação Técnica e Metodológica do Sistema Métrica
             </h1>
-            <p className="text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed text-justify">
+            <p className="doc-hero-lead text-sm sm:text-base mt-3 max-w-3xl leading-relaxed">
               Manual completo de arquitetura, módulos operacionais, diretrizes normativas da Resolução CNJ nº 219/2016 e formulário analítico de equações matemáticas para o Dimensionamento da Força de Trabalho (SIGEP-Força / TJRR).
             </p>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
         </div>
 
         {/* Layout Principal: Navegação Lateral + Conteúdo */}

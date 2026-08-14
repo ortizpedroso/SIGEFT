@@ -184,6 +184,69 @@ html.light .pagina-integracao .text-blue-400 {
   color: #1d4ed8 !important;
 }
 
+/* Topo da documentação: não herda inversão de text-white sobre fundo navy */
+.doc-hero {
+  background: #0b1736;
+  border-color: #3b82f6;
+  color: #f8fafc;
+}
+.doc-hero-title {
+  color: #ffffff;
+}
+.doc-hero-lead {
+  color: #e2e8f0;
+}
+.doc-hero-icon {
+  color: #93c5fd;
+}
+.doc-hero-chip {
+  border: 1px solid transparent;
+}
+.doc-hero-chip-blue {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #60a5fa;
+}
+.doc-hero-chip-amber {
+  background: #b45309;
+  color: #fffbeb;
+  border-color: #fbbf24;
+}
+.doc-hero-chip-green {
+  background: #047857;
+  color: #ecfdf5;
+  border-color: #34d399;
+}
+html.light .doc-hero {
+  background: #ffffff !important;
+  border-color: #1d4ed8 !important;
+  color: #0f172a !important;
+}
+html.light .doc-hero-title,
+html.light main .doc-hero-title,
+html.light .doc-hero .text-white {
+  color: #0b1736 !important;
+}
+html.light .doc-hero-lead,
+html.light main .doc-hero-lead {
+  color: #1e293b !important;
+}
+html.light .doc-hero-icon {
+  color: #1d4ed8 !important;
+}
+html.light .doc-hero-chip-blue {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+html.light .doc-hero-chip-amber {
+  background: #b45309 !important;
+  color: #ffffff !important;
+}
+html.light .doc-hero-chip-green {
+  background: #047857 !important;
+  color: #ffffff !important;
+}
+
 html.light main .text-white {
   color: #0f172a !important;
 }

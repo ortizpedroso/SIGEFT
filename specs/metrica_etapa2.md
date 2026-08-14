@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.32-sei-minuta
+**Versão:** 1.3.33-doc-hero
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -245,3 +245,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.30-integracao | 2026-08-14 | Integração por conector (URL sandbox + chave); teste automático ao salvar; OK+Ver ou dica de falha. Catálogo: 6 checks locais + SEI, Folha/RH, organograma e SSO. Navbar com rótulos sem espremer e hover/tooltip de alto contraste; botão Salvar e testar visível. |
 | 1.3.31-integracao | 2026-08-14 | API de integração em um único campo (URL + chave); Salvar verifica todos os canais (OK verde / Problema vermelho com o erro). Contraste da página Integração. Navbar: Instrução SEI penúltimo; Simulação no lugar de Q₃. |
 | 1.3.32-sei-minuta | 2026-08-14 | Navbar: Ponderação antes de Simulação. Instrução SEI: opção Todas as unidades; minuta circunstanciada automática; editar e salvar (PATCH). |
+| 1.3.33-doc-hero | 2026-08-14 | Topo de `/documentacao`: título e lead com contraste travado (`.doc-hero`) no claro e no escuro. |
