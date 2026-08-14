@@ -52,7 +52,7 @@ export default function Navbar() {
     { href: '/entregas', label: 'Entregas & Capacidade', icon: Package },
     { href: '/esforcos', label: 'Esforços', icon: Users },
     { href: '/ponderacao', label: 'Motor de Ponderação', icon: Sliders },
-    { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
+    { href: '/relatorios-sei', label: 'Integração SEI', icon: FileText },
     { href: '/simulacao', label: 'Simulação Q₃', icon: BarChart3 },
   ];
 

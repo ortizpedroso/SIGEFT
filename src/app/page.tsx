@@ -212,7 +212,7 @@ export default async function HomePage() {
             <QuickLink
               href="/relatorios-sei"
               icon={<IconUsers />}
-              label="3. Painel de Governança e SEI"
+              label="3. Integração SEI"
               description="Emissão automatizada de minutas e pareceres formatados para colar no SEI TJRR"
             />
             <QuickLink

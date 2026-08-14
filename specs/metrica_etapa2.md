@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.25-dns-collide
+**Versão:** 1.3.26-integracao
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -231,3 +231,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.23-dns | 2026-08-14 | TLD confirmado no hPanel: `inovesw.com.br`. Registro A na aba Registros DNS; não usar a aba Subdomínios nem o IP do plano compartilhado. |
 | 1.3.24-caddy | 2026-08-14 | Alembic `PYTHONPATH=/app` (corrige `No module named app`). Proxy via Caddy existente do eventosbr: `deploy/hook-eventosbr-caddy.sh`. |
 | 1.3.25-dns-collide | 2026-08-14 | Login 404: hostname Docker `api` colidia com o eventosbr. Containers `metrica_api` / `metrica_web` / `metrica_db`; `API_URL=http://metrica_api:8000`. |
+| 1.3.26-integracao | 2026-08-14 | Restaura o rótulo **Integração SEI** na Navbar e no atalho do dashboard (`/relatorios-sei`). |
