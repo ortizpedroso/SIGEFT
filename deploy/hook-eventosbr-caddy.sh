@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CADDY_CTR="${CADDY_CTR:-eventosbr-caddy-1}"
-WEB_CTR="${WEB_CTR:-sigep-forca-web-1}"
+WEB_CTR="${WEB_CTR:-metrica_web}"
 HOST="${SIGEP_HOST:-sigep.inovesw.com.br}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -38,22 +38,53 @@ if [[ -z "$CADDYFILE_HOST" || ! -f "$CADDYFILE_HOST" ]]; then
 fi
 
 echo "Caddyfile: $CADDYFILE_HOST"
-if grep -qF "$HOST" "$CADDYFILE_HOST"; then
-  echo "O hostname $HOST já está no Caddyfile."
-else
-  {
-    echo
-    echo "# Métrica / SIGEP — não remover o bloco do eventosbr"
-    echo "$HOST {"
-    echo "	encode gzip zstd"
-    echo "	reverse_proxy ${WEB_CTR}:3000"
-    echo "}"
-  } >> "$CADDYFILE_HOST"
-  echo "Bloco de $HOST acrescentado."
-fi
+python3 - "$CADDYFILE_HOST" "$HOST" "$WEB_CTR" <<'PY'
+from pathlib import Path
+import sys
+
+path, host, web = sys.argv[1], sys.argv[2], sys.argv[3]
+text = Path(path).read_text()
+block = (
+    f"\n# Métrica / SIGEP — não remover o bloco do eventosbr\n"
+    f"{host} {{\n"
+    f"\tencode gzip zstd\n"
+    f"\treverse_proxy {web}:3000\n"
+    f"}}\n"
+)
+marker = "# Métrica / SIGEP"
+if marker in text:
+    start = text.index(marker)
+    # replace from marker through the closing brace of that site block
+    rest = text[start:]
+    brace = rest.find("}")
+    if brace == -1:
+        raise SystemExit("bloco Métrica no Caddyfile sem '}'")
+    text = text[:start] + block.lstrip("\n") + rest[brace + 1 :]
+elif host in text:
+    # hostname já existe sem o marcador: troca o reverse_proxy imediatamente após o host
+    lines = text.splitlines(keepends=True)
+    out = []
+    in_host = False
+    replaced = False
+    for line in lines:
+        if host in line and "{" in line:
+            in_host = True
+        if in_host and "reverse_proxy" in line:
+            indent = line[: len(line) - len(line.lstrip())]
+            line = f"{indent}reverse_proxy {web}:3000\n"
+            replaced = True
+            in_host = False
+        out.append(line)
+    text = "".join(out)
+    if not replaced:
+        text += block
+else:
+    text += block
+Path(path).write_text(text)
+print(f"Caddyfile atualizado: {host} -> {web}:3000")
+PY
 
 docker exec "$CADDY_CTR" caddy reload --config /etc/caddy/Caddyfile
 echo
-echo "Teste: curl -sI -H 'Host: $HOST' https://127.0.0.1/ --insecure | head"
-echo "Site: https://$HOST"
+echo "Teste: curl -sI https://$HOST | head"
 echo "www.eventosbr.app.br não deve ter mudado."

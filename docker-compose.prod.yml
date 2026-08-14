@@ -1,14 +1,16 @@
 # Produção na VPS compartilhada (www.eventosbr.app.br já usa 80/443 via Caddy).
 # A Métrica NÃO publica 80/443. O Caddy do eventosbr faz o proxy.
 #
+# Nomes de container únicos (metrica_*) para não colidir com o serviço
+# `api` do eventosbr na rede compartilhada — senão o login vira 404 Not Found.
+#
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 #   bash deploy/hook-eventosbr-caddy.sh
-#
-# Só publique a web em 127.0.0.1:3001. Postgres e FastAPI ficam na rede interna.
 
 services:
   db:
     image: postgres:15-alpine
+    container_name: metrica_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-metrica}
@@ -21,40 +23,39 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    # NÃO publique 5432 na VPS.
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: metrica_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-metrica}:${DB_PASSWORD}@db:5432/${DB_NAME:-metrica}
+      DATABASE_URL: postgresql://${DB_USER:-metrica}:${DB_PASSWORD}@metrica_db:5432/${DB_NAME:-metrica}
       SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY com 32+ caracteres}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://sigep.inovesw.com.br}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-sigep.inovesw.com.br,api,localhost,127.0.0.1}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-sigep.inovesw.com.br,metrica_api,api,localhost,127.0.0.1}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tjrr.jus.br}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD}
       ENV: production
     depends_on:
       db:
         condition: service_healthy
-    # NÃO publique 8000. O Next fala com api:8000 na rede Docker.
 
   web:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
+    container_name: metrica_web
     restart: unless-stopped
     environment:
-      API_URL: http://api:8000
+      API_URL: http://metrica_api:8000
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
-      # Só loopback: o site existente continua dono de 80/443.
       - "127.0.0.1:3001:3000"
     depends_on:
       - api
