@@ -1,33 +1,51 @@
-DNS: subdomínio de inovesw.com.br apontando para a VPS
-======================================================
+Passo a passo: sigep.inovesw.com.br → VPS (sem criar o subdomínio no hPanel)
+==============================================================================
 
-Zona confirmada no hPanel: Meus domínios > inovesw.com.br > DNS / Servidores de nomes.
-Aba correta: Registros DNS (não Subdomínios, não SSL).
+NÃO use a aba "Subdomínios". Ela cria o hostname no plano compartilhado
+(IP 191.96.63.250). Fique em "Registros DNS" e só adicione um registro A.
 
-www.inovesw.com.br     → plano Hostinger (ALIAS @ → *.cdn.hstgr.net). Não mexe.
-sigep.inovesw.com.br   → registro A novo → IP público da VPS
-www.eventosbr.app.br   → VPS, portas 80/443. Não mexe.
+1. IP da VPS
+   No hPanel: VPS → o servidor do eventosbr → IPv4.
+   Ou, de qualquer máquina: ping www.eventosbr.app.br
+   Anote esse IP. Não use 191.96.63.250 (ftp / plano compartilhado).
 
-O que preencher no formulário "Gerenciar registros DNS"
--------------------------------------------------------
-Tipo:         A          (no dropdown, NÃO use CNAME / SRV / TXT / CAA)
-Nome:         sigep      (Hostinger completa para sigep.inovesw.com.br)
-Aponta para:  IP da VPS  (o mesmo de www.eventosbr.app.br — NÃO use 191.96.63.250)
-TTL:          300 ou o padrão (14400)
+2. Registro A (a tela que você está)
+   Tipo:        A
+   Nome:        sigep
+   Valor:       o IPv4 da VPS (passo 1)
+   TTL:         14400 (pode deixar)
+   Botão:       Adicionar registro
+   Não mexa em ALIAS @, MX, TXT, CNAME de e-mail.
 
-O IP 191.96.63.250 que já aparece no A de "ftp" é o plano compartilhado.
-Se o subdomínio apontar para ele, a Métrica na VPS nunca recebe o tráfego.
+3. Conferir DNS (espere 1–30 min)
+   ping sigep.inovesw.com.br
+   Tem que devolver o IP da VPS, não 191.96.63.250.
 
-O que NÃO fazer
----------------
-- Aba Subdomínios / "Adicionar site": isso cria o hostname no plano compartilhado.
-- CNAME para inovesw.com.br.cdn.hstgr.net: iria para a CDN do site, não para a VPS.
-- Alterar ALIAS @, MX, TXT, SPF, DMARC: e-mail e o site principal quebram.
+4. Na VPS (SSH), código e .env
+   sudo mkdir -p /opt/sigep-forca
+   sudo chown "$USER":"$USER" /opt/sigep-forca
+   cd /opt/sigep-forca
+   git clone https://github.com/ortizpedroso/SIGEFT.git .
+   cp .env.production.example .env.production
+   nano .env.production
+     DB_PASSWORD e ADMIN_PASSWORD: senhas fortes
+     SECRET_KEY: openssl rand -hex 32
+     CORS_ORIGINS=https://sigep.inovesw.com.br
+     ALLOWED_HOSTS=sigep.inovesw.com.br,api,localhost,127.0.0.1
+     COOKIE_SECURE=true
 
-Conferir
---------
-ping sigep.inovesw.com.br
-O IP tem que ser o da VPS, não 191.96.63.250.
+5. Subir Docker (não ocupa 80/443)
+   chmod +x deploy/hostinger.sh
+   ./deploy/hostinger.sh
+   O Next fica em 127.0.0.1:3001. eventosbr continua no ar.
 
-Depois, na VPS: vhost com server_name sigep.inovesw.com.br → 127.0.0.1:3001
-e .env.production com CORS_ORIGINS / ALLOWED_HOSTS nesse hostname.
+6. Vhost NOVO no servidor web da VPS (não edite o do eventosbr)
+   Nginx:  copie deploy/nginx-sigep.conf, nginx -t, reload
+           sudo certbot --nginx -d sigep.inovesw.com.br
+   Apache: copie deploy/apache-sigep.conf, a2ensite, reload
+           sudo certbot --apache -d sigep.inovesw.com.br
+   OLS:    deploy/openlitespeed-sigep.txt (Let's Encrypt no painel)
+
+7. Teste
+   https://sigep.inovesw.com.br
+   www.inovesw.com.br e www.eventosbr.app.br devem continuar iguais.

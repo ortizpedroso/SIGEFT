@@ -53,7 +53,7 @@ Sim: o site **www.inovesw.com.br** pode continuar no plano compartilhado Hosting
 | `sigep.inovesw.com.br` | Registro **A** → IP público da VPS |
 | `www.eventosbr.app.br` | VPS, 80/443 (não alterar o vhost) |
 
-No hPanel do inovesw: aba **Registros DNS** (não Subdomínios). Tipo `A`, nome `sigep`, aponta para o **IP da VPS** — não use o IP `191.96.63.250` do registro `ftp` (plano compartilhado). Detalhes em `deploy/dns-subdominio.txt`.
+No hPanel do inovesw: aba **Registros DNS** (não Subdomínios). Tipo `A`, nome `sigep`, valor = IP da **VPS** — não use `191.96.63.250`. Passo a passo completo em `deploy/dns-subdominio.txt`.
 
 Alternativa na zona do eventosbr: `A sigep.eventosbr.app.br` → o mesmo IP da VPS.
 
