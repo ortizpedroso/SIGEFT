@@ -39,12 +39,16 @@ Contas de seed (alterar senhas em produção):
 - Módulos de entregas/capacidade, ponderação, pareceres SEI e dashboard CNJ 219/2016.
 - Meta `noindex, nofollow` e tema claro/escuro.
 
-## Produção na VPS Hostinger
+## Produção na VPS Hostinger (junto com www.eventosbr.app.br)
 
-Na VPS (Ubuntu), com Docker:
+O site **www.eventosbr.app.br** já ocupa as portas **80** e **443**. A Métrica **não** sobe Caddy e **não** faz bind nessas portas. O Docker publica só `127.0.0.1:3001`; o Nginx/Apache/OpenLiteSpeed existente faz o proxy no subdomínio.
+
+1. DNS (mesmo IP do eventosbr): `A  sigep.eventosbr.app.br`
+2. Na VPS, clone e configure (sem instalar um segundo proxy em 80/443):
 
 ```bash
 sudo apt update && sudo apt install -y git curl
+# Docker só se ainda não estiver instalado:
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER   # saia e entre de novo no SSH depois disto
 
@@ -52,8 +56,8 @@ sudo mkdir -p /opt/sigep-forca
 sudo chown "$USER":"$USER" /opt/sigep-forca
 cd /opt/sigep-forca
 git clone https://github.com/ortizpedroso/SIGEFT.git .
-cp .env.production.example .env
-nano .env   # preencha domínio, senhas e SECRET_KEY
+cp .env.production.example .env.production
+nano .env.production   # senhas, SECRET_KEY; CORS já aponta para sigep.eventosbr.app.br
 ```
 
 Gere a `SECRET_KEY`:
@@ -62,18 +66,17 @@ Gere a `SECRET_KEY`:
 openssl rand -hex 32
 ```
 
-No `.env`, exemplos:
-
-- Com domínio (HTTPS automático via Caddy): `SITE_ADDRESS=sigep.seudominio.jus.br` e `COOKIE_SECURE=true`
-- Só com IP (HTTP na porta 80): `SITE_ADDRESS=:80` e `COOKIE_SECURE=false`
-
-Painel Hostinger: libere as portas **80** e **443** no firewall. Aponte o DNS A do domínio para o IP da VPS.
-
-Suba:
+Suba só os containers (Postgres + API internos, Next em 127.0.0.1:3001):
 
 ```bash
 chmod +x deploy/hostinger.sh
 ./deploy/hostinger.sh
 ```
 
-A API e o PostgreSQL **não** ficam expostos na internet; só o Caddy (80/443) fala com o Next.
+3. No servidor web **já existente**, adicione um vhost **novo** (não edite o do eventosbr):
+
+- Nginx: `deploy/nginx-sigep.conf` + `certbot --nginx -d sigep.eventosbr.app.br`
+- Apache: `deploy/apache-sigep.conf` + `certbot --apache -d sigep.eventosbr.app.br`
+- OpenLiteSpeed: `deploy/openlitespeed-sigep.txt`
+
+A API e o PostgreSQL **não** ficam expostos na internet. `www.eventosbr.app.br` continua intacto.

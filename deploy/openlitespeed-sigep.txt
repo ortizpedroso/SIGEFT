@@ -1,0 +1,14 @@
+OpenLiteSpeed (painel Hostinger / CyberPanel) — proxy da Métrica
+sem tocar no vhost de www.eventosbr.app.br.
+
+1. DNS: A  sigep.eventosbr.app.br  →  mesmo IP de www.eventosbr.app.br
+2. Painel OLS → Virtual Hosts → Add:
+   - Domain: sigep.eventosbr.app.br
+   - Não reutilize o vhost do eventosbr.
+3. Context / External App:
+   - Type: Proxy
+   - Address: 127.0.0.1:3001
+   - URI: /
+4. SSL: Let's Encrypt no painel para sigep.eventosbr.app.br
+5. Confirme que o listener 443 do OLS continua servindo o eventosbr
+   (só adiciona o novo domínio no mesmo listener, vhost separado).

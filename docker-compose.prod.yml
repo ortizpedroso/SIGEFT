@@ -1,74 +1,62 @@
+# Produção na VPS compartilhada (www.eventosbr.app.br já usa 80/443).
+# A Métrica NÃO publica 80/443. O Nginx/Apache/OLS existente faz o proxy.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Só publique a web em 127.0.0.1:3001. Postgres e FastAPI ficam na rede interna.
+
 services:
   db:
     image: postgres:15-alpine
-    container_name: metrica_db_prod
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: "${DB_USER}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: ${DB_USER:-metrica}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-metrica}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-metrica} -d ${DB_NAME:-metrica}"]
       interval: 5s
       timeout: 5s
-      retries: 5
-    restart: unless-stopped
+      retries: 10
+    # NÃO publique 5432 na VPS.
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: metrica_api_prod
+    restart: unless-stopped
     environment:
-      DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}"
-      SECRET_KEY: "${SECRET_KEY}"
-      CORS_ORIGINS: "${CORS_ORIGINS}"
-      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@tjrr.jus.br}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
-      ENV: "${ENV:-production}"
-      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-api,localhost,127.0.0.1}"
+      DATABASE_URL: postgresql://${DB_USER:-metrica}:${DB_PASSWORD}@db:5432/${DB_NAME:-metrica}
+      SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY com 32+ caracteres}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://sigep.eventosbr.app.br}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-sigep.eventosbr.app.br,api,localhost,127.0.0.1}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tjrr.jus.br}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD}
+      ENV: production
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
-    expose:
-      - "8000"
+    # NÃO publique 8000. O Next fala com api:8000 na rede Docker.
 
   web:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: metrica_web_prod
+    restart: unless-stopped
     environment:
-      API_URL: "http://api:8000"
+      API_URL: http://api:8000
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
       NODE_ENV: production
-      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      # Só loopback: o site existente continua dono de 80/443.
+      - "127.0.0.1:3001:3000"
     depends_on:
       - api
-    restart: unless-stopped
-    expose:
-      - "3000"
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: metrica_caddy
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      SITE_ADDRESS: "${SITE_ADDRESS:-:80}"
-      ACME_EMAIL: "${ACME_EMAIL:-admin@localhost}"
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - web
-    restart: unless-stopped
 
 volumes:
   postgres_data:
-  caddy_data:
-  caddy_config:

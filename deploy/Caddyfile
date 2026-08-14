@@ -1,8 +1,10 @@
-{
-	email {$ACME_EMAIL}
-}
-
-{$SITE_ADDRESS} {
-	encode gzip zstd
-	reverse_proxy web:3000
-}
+# OPCIONAL — só numa VPS dedicada, sem outro site em 80/443.
+# Nesta VPS o www.eventosbr.app.br já usa 80/443. NÃO suba o serviço Caddy
+# do compose antigo. Use Nginx/Apache/OLS + deploy/nginx-sigep.conf.
+#
+# {email {$ACME_EMAIL}}
+#
+# {$SITE_ADDRESS} {
+# 	encode gzip zstd
+# 	reverse_proxy web:3000
+# }
