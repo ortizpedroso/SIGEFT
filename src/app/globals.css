@@ -195,6 +195,9 @@ html.light .pagina-integracao .text-blue-400 {
 }
 .doc-hero-lead {
   color: #e2e8f0;
+  width: 100%;
+  text-align: justify;
+  text-justify: inter-word;
 }
 .doc-hero-icon {
   color: #93c5fd;

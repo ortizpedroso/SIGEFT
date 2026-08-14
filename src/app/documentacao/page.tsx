@@ -58,7 +58,7 @@ export default function DocumentacaoPage() {
               <BookOpen className="doc-hero-icon w-8 h-8 shrink-0 mt-0.5" />
               Documentação Técnica e Metodológica do Sistema Métrica
             </h1>
-            <p className="doc-hero-lead text-sm sm:text-base mt-3 max-w-3xl leading-relaxed">
+            <p className="doc-hero-lead w-full text-sm sm:text-base mt-3 leading-relaxed text-justify">
               Manual completo de arquitetura, módulos operacionais, diretrizes normativas da Resolução CNJ nº 219/2016 e formulário analítico de equações matemáticas para o Dimensionamento da Força de Trabalho (SIGEP-Força / TJRR).
             </p>
           </div>
