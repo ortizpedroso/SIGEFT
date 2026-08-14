@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.19-hardening
+**Versão:** 1.3.20-prod
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -120,7 +120,7 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
   - `admin@tjrr.jus.br` (gestor) — senha via `ADMIN_PASSWORD` (default `Admin@2026!`)
   - `ti.executor@tjrr.jus.br` (executor)
   - `apoio@tjrr.jus.br` (apoio_exclusivo)
-- **Compose:** `api` depende de `db` healthy; injeta `DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`, `ADMIN_*`, `ENV`. `web` usa `API_URL=http://api:8000`. Em `ENV=production` a API recusa `SECRET_KEY` fraca e desliga `/docs`.
+- **Compose prod (Hostinger):** `docker-compose.prod.yml` com Caddy (80/443), Next `standalone`, API e Postgres só na rede interna. Script `deploy/hostinger.sh`.
 
 ---
 
@@ -225,3 +225,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.17-review | 2026-08-11 | Ajuste de justificativa do texto (`text-justify`) em todas as seções descritivas da página `/documentacao` e aprimoramento do contraste da seção "5. Exemplos Práticos de Cálculo Passo a Passo", utilizando cartões internos escuros (`bg-slate-900/90`), texto de alto contraste (`text-slate-100`/`text-slate-200`) e bordas temáticas de destaque em Azul, Âmbar e Rosa alinhadas ao sistema. |
 | 1.3.18-fusion | 2026-08-14 | Fusão arquitetural: FastAPI+PostgreSQL única fonte da verdade; Next.js BFF sem `db.ts`; domínio de capacidade/ponderação/SEI promovido ao backend; JWT real nos POSTs; Compose aponta para `src/` na raiz; Alembic 0002; spec/DoD alinhados ao código. |
 | 1.3.19-hardening | 2026-08-14 | UI/UX/Segurança: cookie httpOnly, middleware de sessão, RBAC por perfil DFT, GET autenticado, rate-limit de login, headers de segurança, skip-link/aria/Escape, senhas removidas da tela de login, Esforços no Navbar, `/docs` off em produção. |
+| 1.3.20-prod | 2026-08-14 | Stack de produção para VPS Hostinger: Next standalone, Caddy 80/443, Postgres/API internos, `deploy/hostinger.sh` e `.env.production.example`. |

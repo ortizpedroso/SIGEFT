@@ -38,3 +38,42 @@ Contas de seed (alterar senhas em produção):
 - Q₃ com NumPy e fallback de mediana se redução > 30%.
 - Módulos de entregas/capacidade, ponderação, pareceres SEI e dashboard CNJ 219/2016.
 - Meta `noindex, nofollow` e tema claro/escuro.
+
+## Produção na VPS Hostinger
+
+Na VPS (Ubuntu), com Docker:
+
+```bash
+sudo apt update && sudo apt install -y git curl
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER   # saia e entre de novo no SSH depois disto
+
+sudo mkdir -p /opt/sigep-forca
+sudo chown "$USER":"$USER" /opt/sigep-forca
+cd /opt/sigep-forca
+git clone https://github.com/ortizpedroso/SIGEFT.git .
+cp .env.production.example .env
+nano .env   # preencha domínio, senhas e SECRET_KEY
+```
+
+Gere a `SECRET_KEY`:
+
+```bash
+openssl rand -hex 32
+```
+
+No `.env`, exemplos:
+
+- Com domínio (HTTPS automático via Caddy): `SITE_ADDRESS=sigep.seudominio.jus.br` e `COOKIE_SECURE=true`
+- Só com IP (HTTP na porta 80): `SITE_ADDRESS=:80` e `COOKIE_SECURE=false`
+
+Painel Hostinger: libere as portas **80** e **443** no firewall. Aponte o DNS A do domínio para o IP da VPS.
+
+Suba:
+
+```bash
+chmod +x deploy/hostinger.sh
+./deploy/hostinger.sh
+```
+
+A API e o PostgreSQL **não** ficam expostos na internet; só o Caddy (80/443) fala com o Next.

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({ token_type: 'bearer', user: me });
     response.cookies.set('metrica_token', payload.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true' || (process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false'),
       sameSite: 'lax',
       path: '/',
       maxAge: COOKIE_MAX_AGE,

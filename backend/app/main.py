@@ -44,11 +44,13 @@ origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3001,http://localhost:
 origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 allow_credentials = "*" not in origins
 
-allowed_hosts = [
+internal_hosts = ["localhost", "127.0.0.1", "testserver", "api", "metrica_api", "metrica_web"]
+env_hosts = [
     h.strip()
-    for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver,api,metrica_api,metrica_web").split(",")
+    for h in os.getenv("ALLOWED_HOSTS", "").split(",")
     if h.strip()
 ]
+allowed_hosts = ["*"] if _ENV != "production" else list(dict.fromkeys(internal_hosts + env_hosts))
 
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts or ["localhost"])
