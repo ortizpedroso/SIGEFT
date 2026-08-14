@@ -5,7 +5,9 @@ import Navbar from '@/components/Navbar';
 import { ParecerSEI, Unidade } from '@/types';
 import { jsonAuthHeaders, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import { useEscape } from '@/lib/useEscape';
-import { FileText, Plus, Copy, Check, Printer, AlertCircle, Building2, ShieldCheck } from 'lucide-react';
+import { FileText, Plus, Copy, Check, Printer, Building2, ShieldCheck, Pencil, Save } from 'lucide-react';
+
+const TODAS_UNIDADES = 'todas';
 
 export default function RelatoriosSEIPage() {
   const [pareceres, setPareceres] = useState<ParecerSEI[]>([]);
@@ -23,6 +25,11 @@ export default function RelatoriosSEIPage() {
   const [analista, setAnalista] = useState('Analista Técnico SUBGFT / TJRR');
   const [recomendacao, setRecomendacao] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftMinuta, setDraftMinuta] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -35,8 +42,8 @@ export default function RelatoriosSEIPage() {
       if (resU.ok) {
         const uData = await resU.json();
         setUnidades(uData);
-        if (uData.length > 0 && !unidadeId) {
-          setUnidadeId(uData[0].id);
+        if (!unidadeId) {
+          setUnidadeId(TODAS_UNIDADES);
         }
       }
     } catch {
@@ -54,6 +61,7 @@ export default function RelatoriosSEIPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setGenerating(true);
+    setFormError(null);
     try {
       const res = await apiFetch('/api/relatorios-sei', {
         method: 'POST',
@@ -71,11 +79,41 @@ export default function RelatoriosSEIPage() {
         setProcessoSEI('');
         setRecomendacao('');
         fetchData();
+      } else {
+        setFormError('Não foi possível gerar a minuta. Verifique a unidade e tente de novo.');
       }
     } catch {
-      alert('Erro ao gerar parecer SEI');
+      setFormError('Erro ao gerar parecer SEI');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const startEdit = (p: ParecerSEI) => {
+    setEditingId(p.id);
+    setDraftMinuta(p.minutaTextoSEI);
+    setEditError(null);
+  };
+
+  const saveEdit = async (id: string) => {
+    setSavingEdit(true);
+    setEditError(null);
+    try {
+      const res = await apiFetch(`/api/relatorios-sei/${id}`, {
+        method: 'PATCH',
+        headers: jsonAuthHeaders(),
+        body: JSON.stringify({ minutaTextoSEI: draftMinuta }),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        fetchData();
+      } else {
+        setEditError('Não foi possível salvar a edição da minuta.');
+      }
+    } catch {
+      setEditError('Erro ao salvar a edição da minuta.');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -164,6 +202,16 @@ export default function RelatoriosSEIPage() {
                       {copiedId === p.id ? 'Minuta Copiada!' : 'Copiar Minuta SEI'}
                     </button>
 
+                    {canCreate && editingId !== p.id && (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(p)}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border border-amber-500/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500 hover:text-slate-950"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Editar minuta
+                      </button>
+                    )}
                     <button
                       onClick={() => window.print()}
                       className="p-2 rounded-xl border border-white/10 bg-slate-950/60 text-slate-400 hover:text-white hover:bg-white/5"
@@ -194,10 +242,41 @@ export default function RelatoriosSEIPage() {
                   </div>
                 </div>
 
-                {/* Minuta SEI Preview Box */}
-                <div className="bg-slate-950/90 rounded-xl p-4 border border-white/10 text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto">
-                  {p.minutaTextoSEI}
-                </div>
+                {editingId === p.id ? (
+                  <div className="space-y-3">
+                    {editError && (
+                      <p className="text-sm text-rose-300">{editError}</p>
+                    )}
+                    <textarea
+                      value={draftMinuta}
+                      onChange={(e) => setDraftMinuta(e.target.value)}
+                      rows={16}
+                      className="w-full rounded-xl border border-amber-500/40 bg-slate-950 p-4 text-xs font-mono text-slate-100 leading-relaxed focus:border-amber-400 focus:outline-none"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(p.id)}
+                        disabled={savingEdit}
+                        className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+                      >
+                        <Save className="w-4 h-4" />
+                        {savingEdit ? 'Salvando…' : 'Salvar edição'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-950/90 rounded-xl p-4 border border-white/10 text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                    {p.minutaTextoSEI}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -209,10 +288,13 @@ export default function RelatoriosSEIPage() {
             <div role="dialog" aria-modal="true" aria-labelledby="modal-parecer-sei" className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <h2 id="modal-parecer-sei" className="text-lg font-bold text-white mb-2">Instruir Novo Processo SEI</h2>
               <p className="text-xs text-slate-400 mb-5">
-                Selecione a unidade administrativa para gerar o parecer técnico de lotação em formato oficial do SEI TJRR.
+                Selecione uma unidade ou Todas as unidades. A minuta nasce embasada e circunstanciada; depois você pode editar e salvar.
               </p>
 
               <form onSubmit={handleCreate} className="space-y-4">
+                {formError && (
+                  <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300">{formError}</div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
                     Unidade Objeto de Análise *
@@ -223,6 +305,7 @@ export default function RelatoriosSEIPage() {
                     required
                     className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                   >
+                    <option value={TODAS_UNIDADES}>Todas as unidades</option>
                     {unidades.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.nome} ({u.tipo === 'apoio_indireto' ? 'Apoio Indireto' : 'Apoio Direto'})

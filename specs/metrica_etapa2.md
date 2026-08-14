@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.31-integracao
+**Versão:** 1.3.32-sei-minuta
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -151,6 +151,8 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - **POST /api/entregas:** calcula `capacidade_produtiva`.
 - **GET/POST /api/ponderacao:** lê/grava pesos em `parametros`.
 - **GET/POST /api/integracao** e **POST /api/integracao/testar:** um único par URL + chave (`INTEGRACAO_API`). O POST **salva e verifica todos os canais**. Locais (API Métrica, unidades, entregas, esforços, ponderação, minutas SEI) no GET. Sandbox (SEI `/sei/health`, Folha `/folha/health`, organograma, SSO) usa a API salva. Falha obrigatória aparece em vermelho com o problema; sucesso em **OK**.
+- **POST /api/relatorios-sei:** gera minuta **embasada e circunstanciada** (CNJ 219/2016, CNJ 553/2024, DFT/MGI, ITP, teto, IPS, entregas, diagnóstico e recomendação automática). `unidadeId=todas` emite parecer consolidado de **todas as unidades**.
+- **PATCH /api/relatorios-sei/{id}:** gestor edita e grava o texto da minuta (`minutaTextoSEI`).
 - **POST /api/token** + **GET /api/me:** JWT 8h. Login com rate-limit (8/min por IP) e verificação dummy para não revelar existência de usuário.
 - **Autenticação:** todos os GET e POST em `/api/*` (exceto `POST /api/token` e `GET /`) exigem `get_current_user`.
 - **RBAC:** `gestor` — cadastros, ponderação, simulação Q₃ e parecer SEI; `gestor` e `executor` — POST `/api/esforcos`; `apoio_exclusivo` — somente leitura. POST esforços continua rejeitando alvo `apoio_exclusivo` (HTTP 403).
@@ -175,7 +177,8 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - Acessibilidade: skip-link, `lang=pt-BR`, `focus-visible`, `aria-label`/`aria-expanded` no menu, `aria-modal` nos diálogos, Escape fecha modal, `autocomplete` no login.
 - UX de perfil: botões de escrita ocultos para quem não tem permissão; módulo Esforços no Navbar.
 - **Integração** (`/integracao`): campo de **URL da API** + **chave**; **Salvar** dispara a verificação. Item **OK** (verde) ou **Problema** (vermelho com o texto do erro). **Instrução SEI** (`/relatorios-sei`) permanece o módulo de minutas.
-- **Navbar:** rótulos visíveis no desktop; **Instrução SEI** é o penúltimo item; **Integração** o último; o atalho de `/simulacao` chama-se **Simulação** (não Q₃).
+- **Navbar:** rótulos visíveis no desktop; ordem: Painel, Unidades, Entregas, Esforços, **Ponderação**, **Simulação**, **Instrução SEI**, **Integração**.
+- **Instrução SEI** (`/relatorios-sei`): no modal **Instruir Novo Processo SEI** o seletor inclui **Todas as unidades**. A minuta é gerada automaticamente de forma embasada e circunstanciada; o gestor pode **Editar minuta** e **Salvar edição**.
 - Tema sem FOUC: script de boot lê `sigep_theme` antes da pintura.
 
 ---
@@ -202,6 +205,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - [x] Alternância Claro/Escuro com ThemeContext.
 - [x] UI não usa store em memória; BFF proxy para FastAPI.
 - [x] Nenhuma segunda fonte de verdade de dados.
+- [x] Instrução SEI: seletor Todas as unidades; minuta circunstanciada automática; PATCH para salvar edição (gestor).
 
 ---
 
@@ -240,3 +244,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.29-contrast | 2026-08-14 | Paleta: Navbar não inverte no modo claro; texto secundário no escuro elevado a `#cbd5e1`; botões primários com texto branco; gráficos com eixos/tooltip por tema; login no azul institucional. |
 | 1.3.30-integracao | 2026-08-14 | Integração por conector (URL sandbox + chave); teste automático ao salvar; OK+Ver ou dica de falha. Catálogo: 6 checks locais + SEI, Folha/RH, organograma e SSO. Navbar com rótulos sem espremer e hover/tooltip de alto contraste; botão Salvar e testar visível. |
 | 1.3.31-integracao | 2026-08-14 | API de integração em um único campo (URL + chave); Salvar verifica todos os canais (OK verde / Problema vermelho com o erro). Contraste da página Integração. Navbar: Instrução SEI penúltimo; Simulação no lugar de Q₃. |
+| 1.3.32-sei-minuta | 2026-08-14 | Navbar: Ponderação antes de Simulação. Instrução SEI: opção Todas as unidades; minuta circunstanciada automática; editar e salvar (PATCH). |

@@ -276,3 +276,68 @@ def test_integracao_checklist_local_e_sandbox_aguardando(client: TestClient, db:
     if saved_body["sei"]["status"] == "falha":
         assert saved_body["sei"]["detalhe"]
 
+
+def test_parecer_sei_circunstanciado_todas_e_edicao(client: TestClient, db: Session):
+    cat = Categoria(nome="Cat SEI", ips=80)
+    db.add(cat)
+    db.flush()
+    uni_a = Unidade(nome="Unidade Alfa SEI", tipo=TipoUnidadeEnum.apoio_indireto, categoria_id=cat.id, ips=80)
+    uni_b = Unidade(nome="Unidade Beta SEI", tipo=TipoUnidadeEnum.apoio_direto, categoria_id=cat.id, ips=85)
+    db.add_all([uni_a, uni_b])
+    db.flush()
+    gestor = Usuario(
+        email="sei.gestor@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.gestor,
+        unidade_id=uni_a.id,
+    )
+    db.add(gestor)
+    db.commit()
+    headers = _auth_header(gestor.id)
+
+    uma = client.post(
+        "/api/relatorios-sei",
+        headers=headers,
+        json={"unidadeId": uni_a.id, "analistaResponsavel": "Analista Teste"},
+    )
+    assert uma.status_code == 201
+    texto = uma.json()["minutaTextoSEI"]
+    assert "Resolução CNJ nº 219/2016" in texto
+    assert "circunstanciada" in texto.lower() or "CIRCUNSTANCIADA" in texto.upper()
+    assert "Unidade Alfa SEI" in texto
+
+    todas = client.post(
+        "/api/relatorios-sei",
+        headers=headers,
+        json={"unidadeId": "todas", "analistaResponsavel": "Analista Teste"},
+    )
+    assert todas.status_code == 201
+    consolidado = todas.json()
+    assert consolidado["unidadeNome"] == "Todas as unidades"
+    assert "Unidade Alfa SEI" in consolidado["minutaTextoSEI"]
+    assert "Unidade Beta SEI" in consolidado["minutaTextoSEI"]
+
+    edited = "MINUTA EDITADA PELO GESTOR\n" + consolidado["minutaTextoSEI"]
+    patch = client.patch(
+        f"/api/relatorios-sei/{consolidado['id']}",
+        headers=headers,
+        json={"minutaTextoSEI": edited},
+    )
+    assert patch.status_code == 200
+    assert patch.json()["minutaTextoSEI"].startswith("MINUTA EDITADA PELO GESTOR")
+
+    executor = Usuario(
+        email="sei.exec@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.executor,
+        unidade_id=uni_a.id,
+    )
+    db.add(executor)
+    db.commit()
+    denied = client.patch(
+        f"/api/relatorios-sei/{consolidado['id']}",
+        headers=_auth_header(executor.id),
+        json={"minutaTextoSEI": "tentativa sem permissão de gestor " + "x" * 20},
+    )
+    assert denied.status_code == 403
+

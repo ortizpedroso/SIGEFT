@@ -57,7 +57,7 @@ export interface ParecerSEI {
   numeroProcessoSEI: string;
   unidadeId: string;
   unidadeNome: string;
-  tipoUnidade: TipoUnidade;
+  tipoUnidade: TipoUnidade | 'consolidado';
   servidoresAtuais: number;
   lotacaoIdealCalculada: number;
   desvioPercentual: number;

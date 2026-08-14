@@ -59,7 +59,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins if origins else ["http://localhost:3001"],
     allow_credentials=allow_credentials,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
