@@ -146,7 +146,7 @@ export default function DashboardCharts({
         {/* Gráfico 1: Lotação Atual vs. Lotação Ideal por Unidade */}
         <div className="lg:col-span-8 rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-sm flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-blue-500" />
@@ -161,9 +161,9 @@ export default function DashboardCharts({
               </span>
             </div>
 
-            <div className="h-72 w-full mt-4">
+            <div className="h-80 w-full pt-8">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={unidadesData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+                <BarChart data={unidadesData} margin={{ top: 28, right: 10, left: -20, bottom: 28 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={grid} opacity={0.7} />
                   <XAxis
                     dataKey="nome"
@@ -176,7 +176,10 @@ export default function DashboardCharts({
                   />
                   <YAxis stroke={axis} fontSize={11} tickLine={false} allowDecimals={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                  <Legend
+                    verticalAlign="bottom"
+                    wrapperStyle={{ fontSize: '12px', paddingTop: '18px' }}
+                  />
                   <Bar dataKey="servidores_atuais" name="Lotação Atual" fill="#2563eb" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="lotacao_ideal" name="Lotação Ideal (Calculada)" fill="#10b981" radius={[6, 6, 0, 0]} />
                 </BarChart>
