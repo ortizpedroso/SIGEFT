@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.35-review
+**Versão:** 1.3.36-chart
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -259,3 +259,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.33-doc-hero | 2026-08-14 | Topo de `/documentacao`: título e lead com contraste travado (`.doc-hero`) no claro e no escuro. |
 | 1.3.34-categoria | 2026-08-14 | Cadastro de nova Categoria MGI (POST `/api/categorias`) no formulário de Unidades e na Simulação. |
 | 1.3.35-review | 2026-08-14 | /review: spec alinhada ao código (9 tabelas, Alembic 0003, PATCH autenticado, árvore com `/integracao` e `CategoriaMgiField`). Documentação e validação Pydantic do nome da categoria corrigidas. |
+| 1.3.36-chart | 2026-08-14 | Gráfico de lotação: mais espaço acima das legendas Lotação Atual / Lotação Ideal (Calculada). |
