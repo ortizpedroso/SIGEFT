@@ -16,6 +16,8 @@ export const metadata = {
   },
 }
 
+const themeBootScript = `(function(){try{var t=localStorage.getItem('sigep_theme');if(t==='light'){document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}else{document.documentElement.classList.add('dark');}}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: {
@@ -23,7 +25,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased" suppressHydrationWarning>
+        <a href="#conteudo-principal" className="skip-link">
+          Ir para o conteúdo principal
+        </a>
         <ThemeProvider>
           {children}
         </ThemeProvider>
@@ -31,5 +39,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-

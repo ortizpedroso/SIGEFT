@@ -8,7 +8,7 @@ class CategoriaBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     nome: str
-    ips: Optional[float] = None
+    ips: Optional[float] = Field(default=None, ge=0, le=100)
 
 
 class CategoriaCreate(CategoriaBase):
@@ -27,7 +27,7 @@ class UnidadeBase(BaseModel):
     nome: str
     tipo: str
     categoria_id: str
-    ips: Optional[float] = None
+    ips: Optional[float] = Field(default=None, ge=0, le=100)
 
 
 class UnidadeCreate(UnidadeBase):
@@ -78,13 +78,13 @@ class EntregaBase(BaseModel):
     nome: str
     fonte: str
     unidade_id: str
-    carga_horaria_media: Optional[float] = None
-    volume_mensal: Optional[float] = None
-    complexidade: Optional[int] = None
-    criticidade: Optional[int] = None
-    absenteismo_pct: Optional[float] = None
-    rotatividade_pct: Optional[float] = None
-    capacidade_produtiva: Optional[float] = None
+    carga_horaria_media: Optional[float] = Field(default=None, ge=0, le=24)
+    volume_mensal: Optional[float] = Field(default=None, ge=0)
+    complexidade: Optional[int] = Field(default=None, ge=1, le=5)
+    criticidade: Optional[int] = Field(default=None, ge=1, le=5)
+    absenteismo_pct: Optional[float] = Field(default=None, ge=0, le=100)
+    rotatividade_pct: Optional[float] = Field(default=None, ge=0, le=100)
+    capacidade_produtiva: Optional[float] = Field(default=None, ge=0)
 
 
 class EntregaCreate(EntregaBase):
@@ -103,7 +103,7 @@ class EsforcoBase(BaseModel):
 
     usuario_id: str
     entrega_id: str
-    percentual: float
+    percentual: float = Field(gt=0, le=100)
     mes_referencia: date
 
 
@@ -130,7 +130,7 @@ class EsforcoOut(EsforcoBase):
 
 class LotacaoRequest(BaseModel):
     categoria_id: str
-    reducao_percentual: Optional[float] = 0.0
+    reducao_percentual: Optional[float] = Field(default=0.0, ge=0, le=100)
 
 
 class SimulacaoOut(BaseModel):
@@ -175,10 +175,10 @@ class DashboardStatsOut(BaseModel):
 
 
 class MotorPonderacao(BaseModel):
-    pesoVolume: float = 0.40
-    pesoComplexidade: float = 0.35
-    pesoCriticidade: float = 0.25
-    toleranciaDesvio: float = 20.0
+    pesoVolume: float = Field(default=0.40, ge=0, le=1)
+    pesoComplexidade: float = Field(default=0.35, ge=0, le=1)
+    pesoCriticidade: float = Field(default=0.25, ge=0, le=1)
+    toleranciaDesvio: float = Field(default=20.0, ge=0, le=100)
 
 
 class ParecerSEICreate(BaseModel):

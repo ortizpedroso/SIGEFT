@@ -30,6 +30,7 @@ services:
       CORS_ORIGINS: "${CORS_ORIGINS}"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@tjrr.jus.br}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      ENV: "${ENV:-production}"
     depends_on:
       db:
         condition: service_healthy

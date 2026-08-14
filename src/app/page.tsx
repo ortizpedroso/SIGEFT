@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import DashboardCharts from "@/components/DashboardCharts";
 import { getApiBase } from "@/lib/backend";
 import type { DashboardStats } from "@/types";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,12 @@ async function fetchApiStatus(): Promise<string> {
 
 async function fetchDashboardStats(): Promise<DashboardStats | null> {
   try {
-    const res = await fetch(`${getApiBase()}/api/dashboard/stats`, { cache: "no-store" });
+    const token = cookies().get("metrica_token")?.value;
+    if (!token) return null;
+    const res = await fetch(`${getApiBase()}/api/dashboard/stats`, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -122,7 +128,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>

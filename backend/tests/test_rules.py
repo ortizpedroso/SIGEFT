@@ -151,6 +151,65 @@ def test_simulacao_q3_e_fallback_mediana(client: TestClient, db: Session):
     assert median.json()["strategy"] == "median"
 
 
+def test_get_protegido_sem_token(client: TestClient):
+    assert client.get("/api/unidades").status_code == 401
+    assert client.get("/api/dashboard/stats").status_code == 401
+    assert client.get("/api/usuarios").status_code == 401
+
+
+def test_rbac_gestor_executor_apoio(client: TestClient, db: Session):
+    cat = Categoria(nome="Cat RBAC", ips=80)
+    db.add(cat)
+    db.flush()
+    uni = Unidade(nome="Uni RBAC", tipo=TipoUnidadeEnum.apoio_direto, categoria_id=cat.id, ips=80)
+    db.add(uni)
+    db.flush()
+    gestor = Usuario(
+        email="rbac.gestor@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.gestor,
+        unidade_id=uni.id,
+    )
+    executor = Usuario(
+        email="rbac.exec@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.executor,
+        unidade_id=uni.id,
+    )
+    apoio = Usuario(
+        email="rbac.apoio@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.apoio_exclusivo,
+        unidade_id=uni.id,
+    )
+    db.add_all([gestor, executor, apoio])
+    db.commit()
+
+    assert client.get("/api/unidades", headers=_auth_header(apoio.id)).status_code == 200
+    assert client.post(
+        "/api/unidades",
+        headers=_auth_header(apoio.id),
+        json={"nome": "X", "tipo": "apoio_direto", "categoria_id": cat.id},
+    ).status_code == 403
+    assert client.post(
+        "/api/simulacao/lotacao",
+        headers=_auth_header(executor.id),
+        json={"categoria_id": cat.id, "reducao_percentual": 0},
+    ).status_code == 403
+    created = client.post(
+        "/api/unidades",
+        headers=_auth_header(gestor.id),
+        json={"nome": "Unidade Nova RBAC", "tipo": "apoio_indireto", "categoria_id": cat.id, "ips": 70},
+    )
+    assert created.status_code == 201
+
+
+def test_login_invalido_nao_revela_usuario(client: TestClient):
+    res = client.post("/api/token", data={"username": "naoexiste@tjrr.jus.br", "password": "errada"})
+    assert res.status_code == 401
+    assert res.json()["detail"] == "Credenciais inválidas"
+
+
 def test_capacidade_produtiva_formula():
     # CH=10, abs=10, rot=10 => fator 0.8 => (10/0.8)*100 = 1250
     assert capacidade_produtiva(10, 100, 10, 10) == 1250

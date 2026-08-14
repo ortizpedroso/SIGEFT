@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.18-fusion
+**Versão:** 1.3.19-hardening
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -11,7 +11,7 @@
 
 Entregar o MVP de média fidelidade (Etapa 2) focado na integração do modelo qualitativo/quantitativo do MGI com os gatilhos estatísticos da Resolução CNJ nº 219/2016. A aplicação operará em contêineres, com back-end automatizado e painéis de usabilidade limpa para as unidades de apoio do Tribunal.
 
-A versão **1.3.18-fusion** unifica a arquitetura: FastAPI + PostgreSQL é a única fonte da verdade; o Next.js é interface e BFF (proxy), sem store em memória.
+A versão **1.3.19-hardening** reforça UI, UX e segurança sobre a fusão 1.3.18: sessão httpOnly, RBAC, GET autenticado, a11y e cabeçalhos.
 
 ---
 
@@ -94,16 +94,17 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
 │       ├── database.py
 │       ├── models.py
 │       ├── schemas.py
-│       ├── core/ (__init__, security, init_db)
+│       ├── core/ (__init__, security, init_db, rate_limit, security_headers)
 │       ├── services/dimensionamento.py
 │       └── routers/ (auth, unidades, esforcos, simulacao, dashboard,
 │                     categorias, usuarios, entregas, ponderacao, relatorios_sei)
+├── src/middleware.ts          # exige cookie nas páginas
 └── src/
     ├── app/ (layout, page, login, unidades, entregas, esforcos,
     │         ponderacao, simulacao, relatorios-sei, documentacao, api/*)
     ├── components/ (Navbar, DashboardCharts)
     ├── context/ThemeContext.tsx
-    ├── lib/ (backend.ts, auth.ts)
+    ├── lib/ (backend.ts, auth.ts, useEscape.ts)
     └── types/index.ts
 ```
 
@@ -119,7 +120,7 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
   - `admin@tjrr.jus.br` (gestor) — senha via `ADMIN_PASSWORD` (default `Admin@2026!`)
   - `ti.executor@tjrr.jus.br` (executor)
   - `apoio@tjrr.jus.br` (apoio_exclusivo)
-- **Compose:** `api` depende de `db` healthy; injeta `DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`, `ADMIN_*`. `web` usa `API_URL=http://api:8000`.
+- **Compose:** `api` depende de `db` healthy; injeta `DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`, `ADMIN_*`, `ENV`. `web` usa `API_URL=http://api:8000`. Em `ENV=production` a API recusa `SECRET_KEY` fraca e desliga `/docs`.
 
 ---
 
@@ -150,8 +151,12 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - **POST /api/entregas:** calcula `capacidade_produtiva`.
 - **GET/POST /api/ponderacao:** lê/grava pesos em `parametros`.
 - **GET/POST /api/relatorios-sei:** gera minuta SEI a partir do dimensionamento da unidade.
-- **POST /api/token** + **GET /api/me:** JWT 8h. Todos os POST (exceto `/token`) exigem `get_current_user`.
-- **SECRET_KEY** e senha do admin vêm de variáveis de ambiente.
+- **POST /api/token** + **GET /api/me:** JWT 8h. Login com rate-limit (8/min por IP) e verificação dummy para não revelar existência de usuário.
+- **Autenticação:** todos os GET e POST em `/api/*` (exceto `POST /api/token` e `GET /`) exigem `get_current_user`.
+- **RBAC:** `gestor` — cadastros, ponderação, simulação Q₃ e parecer SEI; `gestor` e `executor` — POST `/api/esforcos`; `apoio_exclusivo` — somente leitura. POST esforços continua rejeitando alvo `apoio_exclusivo` (HTTP 403).
+- **SECRET_KEY** forte obrigatória quando `ENV=production` (mín. 32 caracteres). Senha do admin via `ADMIN_PASSWORD`.
+- **Cabeçalhos:** `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`. `/docs` desligado em produção.
+- Validação Pydantic: percentual 0–100, IPS 0–100, complexidade/criticidade 1–5.
 
 ---
 
@@ -160,11 +165,15 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - Tailwind CSS com paleta corporativa executiva e judiciária. Grid: 1 col mobile / 4 col desktop.
 - **Modo Claro / Modo Escuro:** `ThemeContext` e toggle no `Navbar.tsx` com persistência em `localStorage` (`sigep_theme`).
 - **Resiliência e Hidratação:** proteção `mounted` nos Recharts e `suppressHydrationWarning` no HTML/body.
-- meta `robots: noindex, nofollow` em todas as páginas (`layout.tsx`).
-- bcrypt + JWT (8h). XSS protegido pelo React/Next.js.
-- Login real via `/api/token` (BFF → FastAPI). Token em `localStorage` (`metrica_token`); POSTs enviam `Authorization: Bearer`.
+- meta `robots: noindex, nofollow` em todas as páginas (`layout.tsx`) e header `X-Robots-Tag`.
+- bcrypt + JWT (8h) em cookie **httpOnly** `metrica_token` (SameSite=Lax) definido pelo BFF `/api/token`. O front **não** armazena o JWT em `localStorage`.
+- Login real via `/api/token`. `localStorage` guarda só perfil de UI (`metrica_user`). Logout em `/api/logout` apaga o cookie.
+- Middleware Next: rotas de página exigem cookie; sem sessão redireciona para `/login`.
 - Alerta de cor dinâmica: Apoio Indireto > 30% → vermelho; ≤ 30% → verde.
-- Página oculta `/documentacao`.
+- Página oculta `/documentacao` (autenticada).
+- Acessibilidade: skip-link, `lang=pt-BR`, `focus-visible`, `aria-label`/`aria-expanded` no menu, `aria-modal` nos diálogos, Escape fecha modal, `autocomplete` no login.
+- UX de perfil: botões de escrita ocultos para quem não tem permissão; módulo Esforços no Navbar.
+- Tema sem FOUC: script de boot lê `sigep_theme` antes da pintura.
 
 ---
 
@@ -176,7 +185,12 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - [x] HTTP 400 na trava de 100% de esforço.
 - [x] HTTP 403 para apoio_exclusivo.
 - [x] Q3 com numpy + fallback Mediana automático.
-- [x] core/security.py: bcrypt, JWT via SECRET_KEY de ambiente, get_current_user aplicado nos POSTs.
+- [x] core/security.py: bcrypt, JWT via SECRET_KEY de ambiente, get_current_user em GET/POST, RBAC por perfil.
+- [x] Cookie httpOnly no BFF; JWT não fica em localStorage.
+- [x] Rate-limit de login e hash dummy para credencial inválida.
+- [x] Cabeçalhos de segurança no Next e na API; `/docs` off em produção.
+- [x] Skip-link, aria no menu/modais, Escape, autocomplete, senhas fora da tela de login.
+- [x] Navbar com Esforços; ações de escrita conforme perfil DFT.
 - [x] core/init_db.py: seed ITP=70%, teto=30%, ponderação, 7 categorias, unidades/entregas demo, Super Admin e perfis.
 - [x] Alembic 0001 + 0002 cobrindo o esquema unificado.
 - [x] pydantic[email] e python-multipart no requirements.txt.
@@ -210,3 +224,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.16-review | 2026-08-11 | Criação da página oculta de documentação completa do sistema (`/documentacao`): detalhamento de todos os módulos operacionais, fundamentação jurídica (CNJ 219/2016 e MGI/UnB), tabela analítica de equações matemáticas (Lotação Ideal, Balanço, Teto CNJ 30%, Capacidade Produtiva, Ponderação Multidimensional, Q₃ Benchmark, Mediana Fallback e Trava 100%), exemplos numéricos passo a passo e dicionário de dados. |
 | 1.3.17-review | 2026-08-11 | Ajuste de justificativa do texto (`text-justify`) em todas as seções descritivas da página `/documentacao` e aprimoramento do contraste da seção "5. Exemplos Práticos de Cálculo Passo a Passo", utilizando cartões internos escuros (`bg-slate-900/90`), texto de alto contraste (`text-slate-100`/`text-slate-200`) e bordas temáticas de destaque em Azul, Âmbar e Rosa alinhadas ao sistema. |
 | 1.3.18-fusion | 2026-08-14 | Fusão arquitetural: FastAPI+PostgreSQL única fonte da verdade; Next.js BFF sem `db.ts`; domínio de capacidade/ponderação/SEI promovido ao backend; JWT real nos POSTs; Compose aponta para `src/` na raiz; Alembic 0002; spec/DoD alinhados ao código. |
+| 1.3.19-hardening | 2026-08-14 | UI/UX/Segurança: cookie httpOnly, middleware de sessão, RBAC por perfil DFT, GET autenticado, rate-limit de login, headers de segurança, skip-link/aria/Escape, senhas removidas da tela de login, Esforços no Navbar, `/docs` off em produção. |

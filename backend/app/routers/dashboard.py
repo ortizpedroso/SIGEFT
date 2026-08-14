@@ -6,6 +6,7 @@ from sqlalchemy import func
 
 from app.database import get_db
 from app.models import Unidade, Esforco, Entrega, TipoUnidadeEnum, Categoria, Usuario
+from app.core.security import get_current_user
 from app.schemas import (
     DashboardStatsOut,
     UnidadeChartData,
@@ -18,7 +19,7 @@ router = APIRouter()
 
 
 @router.get("/dashboard/stats", response_model=DashboardStatsOut)
-def get_dashboard_stats(db: Session = Depends(get_db)):
+def get_dashboard_stats(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
     unidades = (
         db.query(Unidade)
         .options(

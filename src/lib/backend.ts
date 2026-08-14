@@ -5,8 +5,20 @@ export function getApiBase(): string {
 export async function proxyToBackend(request: Request, path: string): Promise<Response> {
   const url = `${getApiBase()}${path}`;
   const headers = new Headers();
-  const auth = request.headers.get('authorization');
-  if (auth) headers.set('authorization', auth);
+  const authHeader = request.headers.get('authorization');
+  const cookieHeader = request.headers.get('cookie') || '';
+  const cookieToken = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('metrica_token='))
+    ?.slice('metrica_token='.length);
+
+  if (authHeader) {
+    headers.set('authorization', authHeader);
+  } else if (cookieToken) {
+    headers.set('authorization', `Bearer ${decodeURIComponent(cookieToken)}`);
+  }
+
   const contentType = request.headers.get('content-type');
   if (contentType) headers.set('content-type', contentType);
 

@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.routers import (
     auth,
     unidades,
@@ -17,6 +19,11 @@ from app.routers import (
     relatorios_sei,
 )
 
+_ENV = os.getenv("ENV", "development").lower()
+_docs = None if _ENV == "production" else "/docs"
+_redoc = None if _ENV == "production" else "/redoc"
+_openapi = None if _ENV == "production" else "/openapi.json"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,20 +33,31 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Métrica TJRR — API",
     description="Dimensionamento da Força de Trabalho (MGI / Resolução CNJ nº 219/2016)",
-    version="1.3.18",
+    version="1.3.19",
     lifespan=lifespan,
+    docs_url=_docs,
+    redoc_url=_redoc,
+    openapi_url=_openapi,
 )
 
 origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3001,http://localhost:3000")
 origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 allow_credentials = "*" not in origins
 
+allowed_hosts = [
+    h.strip()
+    for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver,api,metrica_api,metrica_web").split(",")
+    if h.strip()
+]
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts or ["localhost"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins if origins else ["http://localhost:3001"],
     allow_credentials=allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(auth.router, prefix="/api", tags=["Autenticação"])

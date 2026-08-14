@@ -21,6 +21,29 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 100;
+  border-radius: 0.75rem;
+  background: #1d4ed8;
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 0.75rem;
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
 /* Light Theme Overrides (TJRR Executive Judicial Light Canvas) */
 html.light body {
   background-color: #f8fafc;

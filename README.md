@@ -32,7 +32,8 @@ Contas de seed (alterar senhas em produção):
 
 - API FastAPI com validação Pydantic e PostgreSQL relacional (UUID + FKs).
 - Next.js consome a API via rotas BFF em `src/app/api/*` (sem store em memória).
-- JWT real (8h) no login; escritas exigem `Authorization: Bearer`.
+- JWT httpOnly (cookie `metrica_token`, 8h) via BFF; páginas exigem sessão.
+- GET autenticado; POSTs com RBAC (gestor / executor / apoio exclusivo).
 - Trava de esforços em 100% no mês (HTTP 400) e bloqueio de `apoio_exclusivo` (HTTP 403).
 - Q₃ com NumPy e fallback de mediana se redução > 30%.
 - Módulos de entregas/capacidade, ponderação, pareceres SEI e dashboard CNJ 219/2016.

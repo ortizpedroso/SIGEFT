@@ -6,14 +6,14 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import Entrega, Unidade, Usuario
 from app.schemas import EntregaCreate, EntregaOut
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 from app.services.dimensionamento import capacidade_produtiva
 
 router = APIRouter()
 
 
 @router.get("/entregas", response_model=List[EntregaOut])
-def list_entregas(db: Session = Depends(get_db)):
+def list_entregas(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
     return db.query(Entrega).options(joinedload(Entrega.unidade)).all()
 
 
@@ -21,7 +21,7 @@ def list_entregas(db: Session = Depends(get_db)):
 def create_entrega(
     entrega_in: EntregaCreate,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_roles("gestor")),
 ):
     unidade = db.query(Unidade).filter(Unidade.id == entrega_in.unidade_id).first()
     if not unidade:

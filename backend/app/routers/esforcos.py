@@ -6,13 +6,13 @@ from typing import List
 from app.database import get_db
 from app.models import Esforco, Usuario, PerfilDFTEnum, Entrega
 from app.schemas import EsforcoCreate, EsforcoOut
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 
 router = APIRouter()
 
 
 @router.get("/esforcos", response_model=List[EsforcoOut])
-def list_esforcos(db: Session = Depends(get_db)):
+def list_esforcos(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
     return (
         db.query(Esforco)
         .options(
@@ -27,7 +27,7 @@ def list_esforcos(db: Session = Depends(get_db)):
 def create_esforco(
     esforco_in: EsforcoCreate,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_roles("gestor", "executor")),
 ):
     usuario = db.query(Usuario).filter(Usuario.id == esforco_in.usuario_id).first()
     if not usuario:

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import ParecerSEI, Unidade, Usuario
 from app.schemas import ParecerSEICreate, ParecerSEIOut
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 from app.services.dimensionamento import dimensionar_unidade, enum_value
 
 router = APIRouter()
@@ -32,7 +32,7 @@ def _to_out(p: ParecerSEI) -> ParecerSEIOut:
 
 
 @router.get("/relatorios-sei", response_model=List[ParecerSEIOut])
-def list_pareceres(db: Session = Depends(get_db)):
+def list_pareceres(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
     rows = db.query(ParecerSEI).order_by(ParecerSEI.data_emissao.desc()).all()
     return [_to_out(p) for p in rows]
 
@@ -41,7 +41,7 @@ def list_pareceres(db: Session = Depends(get_db)):
 def create_parecer(
     body: ParecerSEICreate,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_roles("gestor")),
 ):
     unidade = (
         db.query(Unidade)

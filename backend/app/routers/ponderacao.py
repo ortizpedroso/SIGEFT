@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Parametro, Usuario
 from app.schemas import MotorPonderacao
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 
 router = APIRouter()
 
@@ -34,7 +34,7 @@ def _read_config(db: Session) -> MotorPonderacao:
 
 
 @router.get("/ponderacao", response_model=MotorPonderacao)
-def get_ponderacao(db: Session = Depends(get_db)):
+def get_ponderacao(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
     return _read_config(db)
 
 
@@ -42,7 +42,7 @@ def get_ponderacao(db: Session = Depends(get_db)):
 def save_ponderacao(
     config: MotorPonderacao,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_roles("gestor")),
 ):
     payload = {
         "PESO_VOLUME": config.pesoVolume,

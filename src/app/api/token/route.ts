@@ -1,6 +1,9 @@
 import { getApiBase } from '@/lib/backend';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+
+const COOKIE_MAX_AGE = 8 * 60 * 60;
 
 export async function POST(request: Request) {
   const apiBase = getApiBase();
@@ -20,7 +23,7 @@ export async function POST(request: Request) {
       password = body.password || body.senha || '';
     }
   } catch {
-    return Response.json({ detail: 'Erro ao autenticar' }, { status: 400 });
+    return NextResponse.json({ detail: 'Erro ao autenticar' }, { status: 400 });
   }
 
   const form = new URLSearchParams();
@@ -35,9 +38,27 @@ export async function POST(request: Request) {
       cache: 'no-store',
     });
     const payload = await res.json();
-    return Response.json(payload, { status: res.status });
+    if (!res.ok) {
+      return NextResponse.json(payload, { status: res.status });
+    }
+
+    const meRes = await fetch(`${apiBase}/api/me`, {
+      headers: { Authorization: `Bearer ${payload.access_token}` },
+      cache: 'no-store',
+    });
+    const me = meRes.ok ? await meRes.json() : null;
+
+    const response = NextResponse.json({ token_type: 'bearer', user: me });
+    response.cookies.set('metrica_token', payload.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: COOKIE_MAX_AGE,
+    });
+    return response;
   } catch {
-    return Response.json(
+    return NextResponse.json(
       { detail: 'API FastAPI indisponível. Verifique se o serviço está no ar.' },
       { status: 503 }
     );

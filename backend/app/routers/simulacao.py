@@ -5,7 +5,7 @@ import numpy as np
 from app.database import get_db
 from app.models import Unidade, Usuario
 from app.schemas import LotacaoRequest, SimulacaoOut
-from app.core.security import get_current_user
+from app.core.security import require_roles
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ router = APIRouter()
 def calcular_lotacao(
     req: LotacaoRequest,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_roles("gestor")),
 ):
     unidades = db.query(Unidade).filter(Unidade.categoria_id == req.categoria_id).all()
     if not unidades:

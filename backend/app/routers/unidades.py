@@ -5,7 +5,7 @@ from typing import List
 from app.database import get_db
 from app.models import Unidade, TipoUnidadeEnum, Usuario
 from app.schemas import UnidadeCreate, UnidadeOut
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_roles
 from app.services.dimensionamento import dimensionar_unidade, enum_value
 
 router = APIRouter()
@@ -37,7 +37,7 @@ def _load_unidades(db: Session):
 
 
 @router.get("/unidades", response_model=List[UnidadeOut])
-def list_unidades(db: Session = Depends(get_db)):
+def list_unidades(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
     return [_to_out(u) for u in _load_unidades(db)]
 
 
@@ -45,7 +45,7 @@ def list_unidades(db: Session = Depends(get_db)):
 def create_unidade(
     unidade_in: UnidadeCreate,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_roles("gestor")),
 ):
     if unidade_in.tipo not in {item.value for item in TipoUnidadeEnum}:
         raise HTTPException(status_code=400, detail="tipo deve ser apoio_direto ou apoio_indireto")

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Entrega, Unidade } from '@/types';
-import { jsonAuthHeaders, apiErrorMessage } from '@/lib/auth';
+import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
+import { useEscape } from '@/lib/useEscape';
 import { Package, Plus, Search, CheckCircle2, Clock, BarChart, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function EntregasPage() {
@@ -15,6 +16,9 @@ export default function EntregasPage() {
 
   // Modal Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const canCreate = canWriteCadastro(perfil);
+  useEscape(isModalOpen, () => setIsModalOpen(false));
   const [unidadeId, setUnidadeId] = useState('');
   const [nome, setNome] = useState('');
   const [fonte, setFonte] = useState('');
@@ -33,8 +37,8 @@ export default function EntregasPage() {
     setLoading(true);
     try {
       const [resEntregas, resUnidades] = await Promise.all([
-        fetch('/api/entregas'),
-        fetch('/api/unidades'),
+        apiFetch('/api/entregas'),
+        apiFetch('/api/unidades'),
       ]);
       if (resEntregas.ok) {
         const data = await resEntregas.json();
@@ -55,6 +59,7 @@ export default function EntregasPage() {
   };
 
   useEffect(() => {
+    setPerfil(getStoredPerfil());
     fetchData();
   }, []);
 
@@ -65,7 +70,7 @@ export default function EntregasPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch('/api/entregas', {
+      const res = await apiFetch('/api/entregas', {
         method: 'POST',
         headers: jsonAuthHeaders(),
         body: JSON.stringify({
@@ -108,7 +113,7 @@ export default function EntregasPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -120,13 +125,16 @@ export default function EntregasPage() {
               Módulos 1 e 2 — Mapeamento estruturado de entregas, horas, absenteísmo e indicador de capacidade
             </p>
           </div>
+          {canCreate && (
           <button
+            type="button"
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             Nova Entrega / Serviço
           </button>
+          )}
         </div>
 
         {/* Success Alert */}
@@ -244,9 +252,9 @@ export default function EntregasPage() {
 
         {/* Modal New Entrega */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm overflow-y-auto">
-            <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl my-8">
-              <h2 className="text-lg font-bold text-white mb-2">Cadastrar Entrega & Metrificação (DFT)</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm overflow-y-auto" onClick={() => setIsModalOpen(false)} role="presentation">
+            <div role="dialog" aria-modal="true" aria-labelledby="modal-nova-entrega" className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl my-8" onClick={(e) => e.stopPropagation()}>
+              <h2 id="modal-nova-entrega" className="text-lg font-bold text-white mb-2">Cadastrar Entrega & Metrificação (DFT)</h2>
               <p className="text-xs text-slate-400 mb-5">
                 Forneça os parâmetros operacionais para geração automatizada do indicador de capacidade.
               </p>

@@ -36,7 +36,7 @@ export default function DocumentacaoPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Banner de Topo */}
         <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 p-6 sm:p-8 mb-8 shadow-2xl">
           <div className="relative z-10">
