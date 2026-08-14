@@ -30,8 +30,7 @@ if ss -tlnp 2>/dev/null | grep -qE ':3001 '; then
 fi
 
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-docker compose -f docker-compose.prod.yml --env-file .env.production exec -T api alembic upgrade head
-docker compose -f docker-compose.prod.yml --env-file .env.production exec -T api python -m app.seed
+# O entrypoint da API já roda `alembic upgrade head` e `python -m app.core.init_db`.
 
 echo
 echo "Containers no ar. Próximo passo no servidor web existente:"
