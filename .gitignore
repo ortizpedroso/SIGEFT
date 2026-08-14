@@ -6,13 +6,19 @@
 .env.production.local
 
 # Dependências do Node.js
+/node_modules
 /frontend/node_modules
 /.pnp
 .pnp.js
 
 # Build do Next.js
+/.next/
+/out/
 /frontend/.next/
 /frontend/out/
+
+# Banco SQLite local do backend
+/backend/test.db
 
 # Arquivos de cache e de sistema do Python
 __pycache__/
