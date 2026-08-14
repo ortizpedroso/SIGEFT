@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server';
-import { dbStore } from '@/lib/db';
+import { proxyToBackend } from '@/lib/backend';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  return NextResponse.json(dbStore.categorias);
+export async function GET(request: Request) {
+  return proxyToBackend(request, '/api/categorias');
 }
-

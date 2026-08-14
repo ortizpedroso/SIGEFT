@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Unidade, MotorPonderacaoConfig } from '@/types';
+import { jsonAuthHeaders, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import { Sliders, RefreshCw, CheckCircle2, ShieldAlert, Scale, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function PonderacaoPage() {
@@ -17,13 +18,15 @@ export default function PonderacaoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const canSave = canWriteCadastro(perfil);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [resConfig, resUnidades] = await Promise.all([
-        fetch('/api/ponderacao'),
-        fetch('/api/unidades'),
+        apiFetch('/api/ponderacao'),
+        apiFetch('/api/unidades'),
       ]);
       if (resConfig.ok) {
         const dataC = await resConfig.json();
@@ -41,6 +44,7 @@ export default function PonderacaoPage() {
   };
 
   useEffect(() => {
+    setPerfil(getStoredPerfil());
     fetchData();
   }, []);
 
@@ -48,9 +52,9 @@ export default function PonderacaoPage() {
     setSaving(true);
     setSuccessMsg('');
     try {
-      const res = await fetch('/api/ponderacao', {
+      const res = await apiFetch('/api/ponderacao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(config),
       });
       if (res.ok) {
@@ -97,7 +101,7 @@ export default function PonderacaoPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -110,7 +114,9 @@ export default function PonderacaoPage() {
             </p>
           </div>
 
+          {canSave && (
           <button
+            type="button"
             onClick={handleSaveConfig}
             disabled={saving}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95 disabled:opacity-50"
@@ -118,6 +124,7 @@ export default function PonderacaoPage() {
             <Sparkles className="w-4 h-4" />
             {saving ? 'Aplicando...' : 'Salvar e Recalcular Todos'}
           </button>
+          )}
         </div>
 
         {successMsg && (

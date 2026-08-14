@@ -35,8 +35,12 @@ export default function Navbar() {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('metrica_token');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {
+      /* cookie is cleared server-side when the route responds */
+    }
     localStorage.removeItem('metrica_user');
     setUser(null);
     router.push('/login');
@@ -46,6 +50,7 @@ export default function Navbar() {
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/unidades', label: 'Unidades', icon: Building2 },
     { href: '/entregas', label: 'Entregas & Capacidade', icon: Package },
+    { href: '/esforcos', label: 'Esforços', icon: Users },
     { href: '/ponderacao', label: 'Motor de Ponderação', icon: Sliders },
     { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
     { href: '/simulacao', label: 'Simulação Q₃', icon: BarChart3 },
@@ -122,9 +127,12 @@ export default function Navbar() {
         <div className="flex items-center gap-2.5 sm:gap-3.5 ml-2 sm:ml-4 pl-2 sm:pl-3 border-l border-blue-500/20">
           {/* Light / Dark Mode Toggle */}
           <button
+            type="button"
             onClick={toggleTheme}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#071026]/90 border border-blue-400/30 text-amber-300 hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm"
             title={theme === 'dark' ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+            aria-label={theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
+            aria-pressed={theme === 'light'}
           >
             {theme === 'dark' ? (
               <Sun className="h-4 w-4 text-amber-300" />
@@ -143,8 +151,10 @@ export default function Navbar() {
                 <p className="text-[10px] uppercase font-bold text-amber-400">{user.perfil_dft}</p>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
                 title="Sair do sistema"
+                aria-label="Sair do sistema"
                 className="text-slate-400 hover:text-rose-400 transition-colors p-1"
               >
                 <LogOut className="h-4 w-4" />
@@ -162,9 +172,12 @@ export default function Navbar() {
 
           {/* Mobile Menu Toggle Button */}
           <button
+            type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl bg-[#071026]/90 border border-blue-400/30 text-blue-200 hover:bg-blue-600 hover:text-white transition-all active:scale-95"
-            aria-label="Abrir menu de navegação"
+            aria-label={isMobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="menu-navegacao-mobile"
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -174,7 +187,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Dropdown Drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-blue-500/20 bg-[#071026] px-4 py-4 space-y-2 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+        <div id="menu-navegacao-mobile" className="md:hidden border-t border-blue-500/20 bg-[#071026] px-4 py-4 space-y-2 shadow-2xl animate-in slide-in-from-top-2 duration-200">
           <div className="text-[10px] uppercase font-bold tracking-wider text-blue-300/80 px-3 mb-1">
             Menu de Navegação
           </div>

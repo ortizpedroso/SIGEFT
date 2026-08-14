@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { ParecerSEI, Unidade } from '@/types';
+import { jsonAuthHeaders, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
+import { useEscape } from '@/lib/useEscape';
 import { FileText, Plus, Copy, Check, Printer, AlertCircle, Building2, ShieldCheck } from 'lucide-react';
 
 export default function RelatoriosSEIPage() {
@@ -13,6 +15,9 @@ export default function RelatoriosSEIPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const canCreate = canWriteCadastro(perfil);
+  useEscape(isModalOpen, () => setIsModalOpen(false));
   const [unidadeId, setUnidadeId] = useState('');
   const [processoSEI, setProcessoSEI] = useState('');
   const [analista, setAnalista] = useState('Analista Técnico SUBGFT / TJRR');
@@ -23,8 +28,8 @@ export default function RelatoriosSEIPage() {
     setLoading(true);
     try {
       const [resP, resU] = await Promise.all([
-        fetch('/api/relatorios-sei'),
-        fetch('/api/unidades'),
+        apiFetch('/api/relatorios-sei'),
+        apiFetch('/api/unidades'),
       ]);
       if (resP.ok) setPareceres(await resP.json());
       if (resU.ok) {
@@ -42,6 +47,7 @@ export default function RelatoriosSEIPage() {
   };
 
   useEffect(() => {
+    setPerfil(getStoredPerfil());
     fetchData();
   }, []);
 
@@ -49,9 +55,9 @@ export default function RelatoriosSEIPage() {
     e.preventDefault();
     setGenerating(true);
     try {
-      const res = await fetch('/api/relatorios-sei', {
+      const res = await apiFetch('/api/relatorios-sei', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           unidadeId,
           numeroProcessoSEI: processoSEI,
@@ -83,7 +89,7 @@ export default function RelatoriosSEIPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -96,13 +102,16 @@ export default function RelatoriosSEIPage() {
             </p>
           </div>
 
+          {canCreate && (
           <button
+            type="button"
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             Emite Parecer Técnico SEI
           </button>
+          )}
         </div>
 
         {/* Info Banner */}
@@ -196,9 +205,9 @@ export default function RelatoriosSEIPage() {
 
         {/* Modal Emitir Parecer */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
-              <h2 className="text-lg font-bold text-white mb-2">Instruir Novo Processo SEI</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} role="presentation">
+            <div role="dialog" aria-modal="true" aria-labelledby="modal-parecer-sei" className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h2 id="modal-parecer-sei" className="text-lg font-bold text-white mb-2">Instruir Novo Processo SEI</h2>
               <p className="text-xs text-slate-400 mb-5">
                 Selecione a unidade administrativa para gerar o parecer técnico de lotação em formato oficial do SEI TJRR.
               </p>

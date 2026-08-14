@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Categoria, SimulacaoResponse } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import { BarChart3, Calculator, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export default function SimulacaoPage() {
@@ -12,9 +13,12 @@ export default function SimulacaoPage() {
   const [result, setResult] = useState<SimulacaoResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const canSimulate = canWriteCadastro(perfil);
 
   useEffect(() => {
-    fetch('/api/categorias')
+    setPerfil(getStoredPerfil());
+    apiFetch('/api/categorias')
       .then((res) => res.json())
       .then((data: Categoria[]) => {
         setCategorias(data);
@@ -30,6 +34,11 @@ export default function SimulacaoPage() {
     setError(null);
     setResult(null);
 
+    if (!canSimulate) {
+      setError('Somente o perfil gestor pode executar simulações preditivas.');
+      return;
+    }
+
     if (!categoriaId) {
       setError('Selecione uma categoria MGI para simulação.');
       return;
@@ -37,9 +46,9 @@ export default function SimulacaoPage() {
 
     try {
       setLoading(true);
-      const res = await fetch('/api/simulacao/lotacao', {
+      const res = await apiFetch('/api/simulacao/lotacao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           categoria_id: categoriaId,
           reducao_percentual: Number(reducaoPercentual),
@@ -48,7 +57,7 @@ export default function SimulacaoPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || 'Erro ao realizar simulação');
+        throw new Error(apiErrorMessage(data, 'Erro ao realizar simulação'));
       }
 
       setResult(data);
@@ -66,7 +75,7 @@ export default function SimulacaoPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         <div className="mb-8">
         <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
           <BarChart3 className="w-7 h-7 text-blue-500" />
@@ -133,10 +142,10 @@ export default function SimulacaoPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95 flex items-center justify-center gap-2"
+              disabled={loading || !canSimulate}
+              className="w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? 'Calculando...' : 'Calcular Lotação'}
+              {loading ? 'Calculando...' : canSimulate ? 'Calcular Lotação' : 'Somente gestores simulam Q₃'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

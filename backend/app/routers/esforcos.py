@@ -1,20 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import List
 
 from app.database import get_db
-from app.models import Esforco, Usuario, PerfilDFTEnum
+from app.models import Esforco, Usuario, PerfilDFTEnum, Entrega
 from app.schemas import EsforcoCreate, EsforcoOut
+from app.core.security import get_current_user, require_roles
 
 router = APIRouter()
 
+
 @router.get("/esforcos", response_model=List[EsforcoOut])
-def list_esforcos(db: Session = Depends(get_db)):
-    return db.query(Esforco).all()
+def list_esforcos(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
+    return (
+        db.query(Esforco)
+        .options(
+            joinedload(Esforco.usuario),
+            joinedload(Esforco.entrega).joinedload(Entrega.unidade),
+        )
+        .all()
+    )
+
 
 @router.post("/esforcos", response_model=EsforcoOut, status_code=201)
-def create_esforco(esforco_in: EsforcoCreate, db: Session = Depends(get_db)):
+def create_esforco(
+    esforco_in: EsforcoCreate,
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(require_roles("gestor", "executor")),
+):
     usuario = db.query(Usuario).filter(Usuario.id == esforco_in.usuario_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -25,7 +39,6 @@ def create_esforco(esforco_in: EsforcoCreate, db: Session = Depends(get_db)):
             detail="Usuários com perfil de apoio exclusivo não podem cadastrar esforços.",
         )
 
-    # Check sum for month
     ano = esforco_in.mes_referencia.year
     mes = esforco_in.mes_referencia.month
 
@@ -48,5 +61,13 @@ def create_esforco(esforco_in: EsforcoCreate, db: Session = Depends(get_db)):
     esforco = Esforco(**esforco_in.model_dump())
     db.add(esforco)
     db.commit()
-    db.refresh(esforco)
-    return esforco
+    loaded = (
+        db.query(Esforco)
+        .options(
+            joinedload(Esforco.usuario),
+            joinedload(Esforco.entrega).joinedload(Entrega.unidade),
+        )
+        .filter(Esforco.id == esforco.id)
+        .first()
+    )
+    return loaded

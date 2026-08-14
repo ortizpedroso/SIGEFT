@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { dbStore } from '@/lib/db';
+import { proxyToBackend } from '@/lib/backend';
 
-export async function GET() {
-  const stats = dbStore.getDashboardStats();
-  return NextResponse.json(stats);
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  return proxyToBackend(request, '/api/dashboard/stats');
 }

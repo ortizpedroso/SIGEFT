@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Esforco, Usuario, Entrega } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteEsforco } from '@/lib/auth';
+import { useEscape } from '@/lib/useEscape';
 import { Users, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function EsforcosPage() {
@@ -13,6 +15,9 @@ export default function EsforcosPage() {
 
   // Form
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const canCreate = canWriteEsforco(perfil);
+  useEscape(isModalOpen, () => setIsModalOpen(false));
   const [usuarioId, setUsuarioId] = useState('');
   const [entregaId, setEntregaId] = useState('');
   const [percentual, setPercentual] = useState<string>('20');
@@ -31,9 +36,9 @@ export default function EsforcosPage() {
     try {
       setLoading(true);
       const [resE, resU, resEnt] = await Promise.all([
-        fetch('/api/esforcos'),
-        fetch('/api/usuarios'),
-        fetch('/api/entregas'),
+        apiFetch('/api/esforcos'),
+        apiFetch('/api/usuarios'),
+        apiFetch('/api/entregas'),
       ]);
       const dataE = await resE.json();
       const dataU = await resU.json();
@@ -53,6 +58,7 @@ export default function EsforcosPage() {
   };
 
   useEffect(() => {
+    setPerfil(getStoredPerfil());
     fetchData();
   }, []);
 
@@ -69,9 +75,9 @@ export default function EsforcosPage() {
 
     try {
       setSubmitting(true);
-      const res = await fetch('/api/esforcos', {
+      const res = await apiFetch('/api/esforcos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           usuario_id: usuarioId,
           entrega_id: entregaId,
@@ -82,7 +88,7 @@ export default function EsforcosPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || 'Erro ao registrar esforço');
+        throw new Error(apiErrorMessage(data, 'Erro ao registrar esforço'));
       }
 
       setFormSuccess('Esforço registrado com sucesso!');
@@ -100,7 +106,7 @@ export default function EsforcosPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-8 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-8 sm:py-10 w-full">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
@@ -111,7 +117,9 @@ export default function EsforcosPage() {
             Aloque percentuais de tempo de trabalho por entrega e mês de referência (trava de 100%)
           </p>
         </div>
+        {canCreate && (
         <button
+          type="button"
           onClick={() => {
             setFormError(null);
             setIsModalOpen(true);
@@ -121,6 +129,7 @@ export default function EsforcosPage() {
           <Plus className="w-4 h-4" />
           Registrar Esforço
         </button>
+        )}
       </div>
 
       {formSuccess && (
@@ -176,9 +185,9 @@ export default function EsforcosPage() {
 
       {/* Modal Registrar Esforço */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-4">Registrar Novo Esforço</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="modal-novo-esforco" className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 id="modal-novo-esforco" className="text-lg font-bold text-white mb-4">Registrar Novo Esforço</h2>
 
             {formError && (
               <div className="mb-4 p-3 rounded-xl border border-rose-500/30 bg-rose-950/30 text-rose-300 text-xs flex items-center gap-2">

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Unidade, Categoria } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
+import { useEscape } from '@/lib/useEscape';
 import { Building2, Plus, Search, CheckCircle2, AlertCircle, Users, Scale, ArrowUpRight, ArrowDownRight, BarChart } from 'lucide-react';
 
 export default function UnidadesPage() {
@@ -22,18 +24,27 @@ export default function UnidadesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const canCreate = canWriteCadastro(perfil);
+  useEscape(isModalOpen, () => setIsModalOpen(false));
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [resU, resC] = await Promise.all([
-        fetch('/api/unidades'),
-        fetch('/api/categorias'),
+        apiFetch('/api/unidades'),
+        apiFetch('/api/categorias'),
       ]);
+      if (!resU.ok || !resC.ok) {
+        setLoadError('Não foi possível carregar unidades. Tente novamente.');
+        return;
+      }
       const dataU = await resU.json();
       const dataC = await resC.json();
-      setUnidades(dataU);
-      setCategorias(dataC);
+      setUnidades(Array.isArray(dataU) ? dataU : []);
+      setCategorias(Array.isArray(dataC) ? dataC : []);
+      setLoadError(null);
       if (dataC.length > 0 && !categoriaId) {
         setCategoriaId(dataC[0].id);
       }
@@ -45,6 +56,7 @@ export default function UnidadesPage() {
   };
 
   useEffect(() => {
+    setPerfil(getStoredPerfil());
     fetchData();
   }, []);
 
@@ -60,9 +72,9 @@ export default function UnidadesPage() {
 
     try {
       setSubmitting(true);
-      const res = await fetch('/api/unidades', {
+      const res = await apiFetch('/api/unidades', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           nome: nome.trim(),
           tipo,
@@ -73,7 +85,7 @@ export default function UnidadesPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || 'Erro ao cadastrar unidade');
+        throw new Error(apiErrorMessage(err, 'Erro ao cadastrar unidade'));
       }
 
       setFormSuccess('Unidade cadastrada com sucesso!');
@@ -100,7 +112,7 @@ export default function UnidadesPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
+      <main id="conteudo-principal" className="flex-1 mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -112,20 +124,29 @@ export default function UnidadesPage() {
               Dimensionamento e diagnóstico de lotação paradigma conforme metodologia MGI e CNJ 219/2016
             </p>
           </div>
+          {canCreate && (
           <button
+            type="button"
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-600 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             Nova Unidade
           </button>
+          )}
         </div>
 
         {/* Messages */}
         {formSuccess && (
-          <div className="mb-6 p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/30 text-emerald-300 text-sm flex items-center gap-2">
+          <div role="status" className="mb-6 p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/30 text-emerald-300 text-sm flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 shrink-0" />
             {formSuccess}
+          </div>
+        )}
+        {loadError && (
+          <div role="alert" className="mb-6 p-4 rounded-xl border border-rose-500/30 bg-rose-950/30 text-rose-300 text-sm flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            {loadError}
           </div>
         )}
 
@@ -277,9 +298,19 @@ export default function UnidadesPage() {
 
         {/* Modal Nova Unidade */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
-              <h2 className="text-lg font-bold text-white mb-4">Cadastrar Nova Unidade</h2>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+            role="presentation"
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-nova-unidade"
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="modal-nova-unidade" className="text-lg font-bold text-white mb-4">Cadastrar Nova Unidade</h2>
 
               {formError && (
                 <div className="mb-4 p-3 rounded-xl border border-rose-500/30 bg-rose-950/30 text-rose-300 text-xs flex items-center gap-2">
