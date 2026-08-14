@@ -1,0 +1,44 @@
+DNS: subdomínio de um plano Hostinger (ex.: inovesw.cm.br) apontando para a VPS
+================================================================================
+
+Sim. O site principal pode ficar no plano compartilhado Hostinger e um
+subdomínio apontar para outro IP (a VPS). São registros DNS independentes.
+
+www.inovesw.cm.br     → continua no plano Hostinger (não mexe)
+sigep.inovesw.cm.br   → registro A para o IP público da VPS
+www.eventosbr.app.br  → continua na VPS, portas 80/443, sem alteração
+
+O que NÃO fazer
+---------------
+No hPanel do plano inovesw, NÃO use "Adicionar site" / "Criar subdomínio"
+como website. Isso faria o Hostinger servir o hostname no plano compartilhado
+(IP errado) e a Métrica na VPS nunca receberia o tráfego.
+
+Só crie o registro DNS.
+
+Passo a passo no hPanel (plano do inovesw)
+------------------------------------------
+1. Domínios → inovesw.cm.br → DNS / Zona DNS
+2. Adicionar registro:
+   Tipo: A
+   Nome: sigep
+   Aponta para: IP público da VPS (o mesmo de www.eventosbr.app.br)
+   TTL: 300 (pode subir depois)
+3. Espere a propagação (minutos a poucas horas). Teste:
+     ping sigep.inovesw.cm.br
+   O IP tem que ser o da VPS, não o do plano compartilhado.
+4. Na VPS, o vhost (Nginx/Apache/OLS) usa server_name sigep.inovesw.cm.br
+   e faz proxy para 127.0.0.1:3001. Certbot:
+     certbot --nginx -d sigep.inovesw.cm.br
+     (ou --apache / Let's Encrypt no painel OLS)
+5. Em .env.production:
+     CORS_ORIGINS=https://sigep.inovesw.cm.br
+     ALLOWED_HOSTS=sigep.inovesw.cm.br,api,localhost,127.0.0.1
+
+Se o domínio do plano for inovesw.com.br (e não .cm.br), use esse hostname
+no registro A, no vhost e no .env.
+
+Alternativa: DNS do próprios eventosbr
+--------------------------------------
+A  sigep.eventosbr.app.br  →  IP da VPS
+É o mesmo modelo; só muda em qual zona DNS você cria o A.

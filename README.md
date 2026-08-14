@@ -41,9 +41,25 @@ Contas de seed (alterar senhas em produção):
 
 ## Produção na VPS Hostinger (junto com www.eventosbr.app.br)
 
-O site **www.eventosbr.app.br** já ocupa as portas **80** e **443**. A Métrica **não** sobe Caddy e **não** faz bind nessas portas. O Docker publica só `127.0.0.1:3001`; o Nginx/Apache/OpenLiteSpeed existente faz o proxy no subdomínio.
+O site **www.eventosbr.app.br** já ocupa as portas **80** e **443**. A Métrica **não** sobe Caddy e **não** faz bind nessas portas. O Docker publica só `127.0.0.1:3001`; o Nginx/Apache/OpenLiteSpeed existente faz o proxy no hostname que você escolher.
 
-1. DNS (mesmo IP do eventosbr): `A  sigep.eventosbr.app.br`
+### DNS: subdomínio de outro plano Hostinger (inovesw)
+
+Sim: o site **www.inovesw.cm.br** pode continuar no plano compartilhado Hostinger. Um subdomínio desse domínio aponta para a VPS só com um registro A — o plano compartilhado não hospeda a Métrica.
+
+| Hostname | Onde fica |
+| --- | --- |
+| `www.inovesw.cm.br` | Plano Hostinger (não alterar) |
+| `sigep.inovesw.cm.br` | Registro **A** → IP público da VPS |
+| `www.eventosbr.app.br` | VPS, 80/443 (não alterar o vhost) |
+
+No hPanel do inovesw: **Domínios → DNS**. Tipo `A`, nome `sigep`, valor = IP da VPS. **Não** use “Adicionar site / criar subdomínio” no plano compartilhado (isso serviria o hostname no IP errado). Detalhes em `deploy/dns-subdominio.txt`.
+
+Se o domínio do plano for `inovesw.com.br`, use `sigep.inovesw.com.br` no DNS, no vhost e no `.env.production`.
+
+Alternativa na zona do eventosbr: `A sigep.eventosbr.app.br` → o mesmo IP da VPS.
+
+1. Crie o registro A e confira com `ping` que o hostname resolve para a VPS.
 2. Na VPS, clone e configure (sem instalar um segundo proxy em 80/443):
 
 ```bash
@@ -57,7 +73,7 @@ sudo chown "$USER":"$USER" /opt/sigep-forca
 cd /opt/sigep-forca
 git clone https://github.com/ortizpedroso/SIGEFT.git .
 cp .env.production.example .env.production
-nano .env.production   # senhas, SECRET_KEY; CORS já aponta para sigep.eventosbr.app.br
+nano .env.production   # senhas, SECRET_KEY, CORS_ORIGINS e ALLOWED_HOSTS = o hostname do DNS
 ```
 
 Gere a `SECRET_KEY`:
@@ -73,10 +89,10 @@ chmod +x deploy/hostinger.sh
 ./deploy/hostinger.sh
 ```
 
-3. No servidor web **já existente**, adicione um vhost **novo** (não edite o do eventosbr):
+3. No servidor web **já existente** na VPS, adicione um vhost **novo** (não edite o do eventosbr). Troque `server_name` pelo hostname do DNS (`sigep.inovesw.cm.br` ou o que você criou):
 
-- Nginx: `deploy/nginx-sigep.conf` + `certbot --nginx -d sigep.eventosbr.app.br`
-- Apache: `deploy/apache-sigep.conf` + `certbot --apache -d sigep.eventosbr.app.br`
+- Nginx: `deploy/nginx-sigep.conf` + `certbot --nginx -d SEU_HOST`
+- Apache: `deploy/apache-sigep.conf` + `certbot --apache -d SEU_HOST`
 - OpenLiteSpeed: `deploy/openlitespeed-sigep.txt`
 
-A API e o PostgreSQL **não** ficam expostos na internet. `www.eventosbr.app.br` continua intacto.
+A API e o PostgreSQL **não** ficam expostos na internet. `www.eventosbr.app.br` e `www.inovesw.cm.br` continuam onde já estão.
