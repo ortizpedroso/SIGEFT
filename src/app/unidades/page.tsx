@@ -6,6 +6,7 @@ import { Unidade, Categoria } from '@/types';
 import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import { useEscape } from '@/lib/useEscape';
 import { Building2, Plus, Search, CheckCircle2, AlertCircle, Users, Scale, ArrowUpRight, ArrowDownRight, BarChart } from 'lucide-react';
+import CategoriaMgiField from '@/components/CategoriaMgiField';
 
 export default function UnidadesPage() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -348,23 +349,13 @@ export default function UnidadesPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                    Categoria MGI *
-                  </label>
-                  <select
-                    value={categoriaId}
-                    onChange={(e) => setCategoriaId(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-                  >
-                    {categorias.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CategoriaMgiField
+                  categorias={categorias}
+                  value={categoriaId}
+                  onChange={setCategoriaId}
+                  onCreated={(cat) => setCategorias((prev) => [...prev, cat].sort((a, b) => a.nome.localeCompare(b.nome)))}
+                  canCreate={canCreate}
+                />
 
                 <div>
                   <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">

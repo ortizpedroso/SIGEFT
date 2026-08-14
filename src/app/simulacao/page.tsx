@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import { Categoria, SimulacaoResponse } from '@/types';
 import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import { BarChart3, Calculator, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import CategoriaMgiField from '@/components/CategoriaMgiField';
 
 export default function SimulacaoPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -102,22 +103,13 @@ export default function SimulacaoPage() {
           )}
 
           <form onSubmit={handleSimulate} className="space-y-5">
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                Categoria MGI *
-              </label>
-              <select
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none"
-              >
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CategoriaMgiField
+              categorias={categorias}
+              value={categoriaId}
+              onChange={setCategoriaId}
+              onCreated={(cat) => setCategorias((prev) => [...prev, cat].sort((a, b) => a.nome.localeCompare(b.nome)))}
+              canCreate={canSimulate}
+            />
 
             <div>
               <div className="flex justify-between text-xs font-semibold uppercase text-slate-400 mb-1">

@@ -203,6 +203,24 @@ def test_rbac_gestor_executor_apoio(client: TestClient, db: Session):
     )
     assert created.status_code == 201
 
+    nova_cat = client.post(
+        "/api/categorias",
+        headers=_auth_header(gestor.id),
+        json={"nome": "Gestão Documental", "ips": 77.5},
+    )
+    assert nova_cat.status_code == 201
+    assert nova_cat.json()["nome"] == "Gestão Documental"
+    assert client.post(
+        "/api/categorias",
+        headers=_auth_header(executor.id),
+        json={"nome": "Outra Cat", "ips": 70},
+    ).status_code == 403
+    assert client.post(
+        "/api/categorias",
+        headers=_auth_header(gestor.id),
+        json={"nome": "Gestão Documental", "ips": 70},
+    ).status_code == 409
+
 
 def test_login_invalido_nao_revela_usuario(client: TestClient):
     res = client.post("/api/token", data={"username": "naoexiste@tjrr.jus.br", "password": "errada"})

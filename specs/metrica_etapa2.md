@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.33-doc-hero
+**Versão:** 1.3.34-categoria
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -150,6 +150,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - **GET /api/unidades:** enriquece com `servidores_atuais`, `lotacao_ideal`, `balanco`, `status_dimensionamento`.
 - **POST /api/entregas:** calcula `capacidade_produtiva`.
 - **GET/POST /api/ponderacao:** lê/grava pesos em `parametros`.
+- **GET/POST /api/categorias:** lista categorias MGI; o gestor cadastra nova (nome único + IPS 0–100). Duplicata → HTTP 409.
 - **GET/POST /api/integracao** e **POST /api/integracao/testar:** um único par URL + chave (`INTEGRACAO_API`). O POST **salva e verifica todos os canais**. Locais (API Métrica, unidades, entregas, esforços, ponderação, minutas SEI) no GET. Sandbox (SEI `/sei/health`, Folha `/folha/health`, organograma, SSO) usa a API salva. Falha obrigatória aparece em vermelho com o problema; sucesso em **OK**.
 - **POST /api/relatorios-sei:** gera minuta **embasada e circunstanciada** (CNJ 219/2016, CNJ 553/2024, DFT/MGI, ITP, teto, IPS, entregas, diagnóstico e recomendação automática). `unidadeId=todas` emite parecer consolidado de **todas as unidades**.
 - **PATCH /api/relatorios-sei/{id}:** gestor edita e grava o texto da minuta (`minutaTextoSEI`).
@@ -178,6 +179,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - UX de perfil: botões de escrita ocultos para quem não tem permissão; módulo Esforços no Navbar.
 - **Integração** (`/integracao`): campo de **URL da API** + **chave**; **Salvar** dispara a verificação. Item **OK** (verde) ou **Problema** (vermelho com o texto do erro). **Instrução SEI** (`/relatorios-sei`) permanece o módulo de minutas.
 - **Navbar:** rótulos visíveis no desktop; ordem: Painel, Unidades, Entregas, Esforços, **Ponderação**, **Simulação**, **Instrução SEI**, **Integração**.
+- **Categoria MGI:** no cadastro de Unidade e na Simulação, o campo **Categoria MGI *** tem o atalho **Cadastrar nova categoria MGI** (nome + IPS). A categoria criada entra na lista e fica selecionada.
 - **Instrução SEI** (`/relatorios-sei`): no modal **Instruir Novo Processo SEI** o seletor inclui **Todas as unidades**. A minuta é gerada automaticamente de forma embasada e circunstanciada; o gestor pode **Editar minuta** e **Salvar edição**.
 - Tema sem FOUC: script de boot lê `sigep_theme` antes da pintura.
 
@@ -246,3 +248,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.31-integracao | 2026-08-14 | API de integração em um único campo (URL + chave); Salvar verifica todos os canais (OK verde / Problema vermelho com o erro). Contraste da página Integração. Navbar: Instrução SEI penúltimo; Simulação no lugar de Q₃. |
 | 1.3.32-sei-minuta | 2026-08-14 | Navbar: Ponderação antes de Simulação. Instrução SEI: opção Todas as unidades; minuta circunstanciada automática; editar e salvar (PATCH). |
 | 1.3.33-doc-hero | 2026-08-14 | Topo de `/documentacao`: título e lead com contraste travado (`.doc-hero`) no claro e no escuro. |
+| 1.3.34-categoria | 2026-08-14 | Cadastro de nova Categoria MGI (POST `/api/categorias`) no formulário de Unidades e na Simulação. |
