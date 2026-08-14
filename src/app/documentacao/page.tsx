@@ -214,7 +214,7 @@ export default function DocumentacaoPage() {
                     <span>Gestão de Unidades (`/unidades`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Mapeamento de todas as secretarias, varas e coordenadorias. Classifica as unidades em Apoio Direto vs. Apoio Indireto, calcula automaticamente a Lotação Ideal Paradigmática, gera os selos de diagnóstico (Déficit, Lotação Ideal ou Excesso) e permite a edição dinâmica dos índices de produtividade (IPS) e vínculos com categorias MGI.
+                    Mapeamento de todas as secretarias, varas e coordenadorias. Classifica as unidades em Apoio Direto vs. Apoio Indireto, calcula automaticamente a Lotação Ideal Paradigmática, gera os selos de diagnóstico (Déficit, Lotação Ideal ou Excesso) e permite a edição dinâmica dos índices de produtividade (IPS) e vínculos com categorias MGI. No campo Categoria MGI o gestor cadastra uma nova categoria (nome + IPS) sem sair do formulário.
                   </p>
                 </div>
 
@@ -258,7 +258,7 @@ export default function DocumentacaoPage() {
                     <span>Simulação Q3 / Mediana (`/simulacao`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Ferramenta de análise estatística preditiva de pessoal por Categoria Transversal MGI. Calcula o Terceiro Quartil (Q3) como meta de alta produtividade e aciona automaticamente o gatilho de segurança com a Mediana (50%) caso a redução solicitada ultrapasse 30%.
+                    Ferramenta de análise estatística preditiva de pessoal por Categoria Transversal MGI. Calcula o Terceiro Quartil (Q3) como meta de alta produtividade e aciona automaticamente o gatilho de segurança com a Mediana (50%) caso a redução solicitada ultrapasse 30%. O campo Categoria MGI também permite cadastrar uma nova categoria.
                   </p>
                 </div>
 
@@ -269,7 +269,7 @@ export default function DocumentacaoPage() {
                     <span>Minutas SEI &amp; Pareceres Técnicos (`/relatorios-sei`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Geração automatizada de pareceres técnicos e minutas administrativas no padrão SEI (Sistema Eletrônico de Informações). Apresenta a fundamentação do desvio percentual apurado em relação à Lotação Paradigma e formata o parecer formal pronto para submissão à Presidência do Tribunal com recomendações de remanejamento.
+                    Geração automatizada de minutas embasadas e circunstanciadas (CNJ 219/2016, CNJ 553/2024 e DFT/MGI). O modal Instruir Novo Processo SEI inclui a opção Todas as unidades (parecer consolidado). O gestor pode editar a minuta e salvar a edição.
                   </p>
                 </div>
 
@@ -280,7 +280,7 @@ export default function DocumentacaoPage() {
                     <span>Integração (`/integracao`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Painel de conectores necessários para o SIGEP-Força operar: checks locais (API, unidades, entregas, esforços, ponderação, minutas) e canais externos com URL sandbox + chave de API (SEI, Folha/RH, organograma, SSO). Ao salvar a chave, o teste roda sozinho; sucesso mostra OK e Ver; falha indica o que corrigir. A Instrução SEI (`/relatorios-sei`) permanece o módulo de minutas.
+                    Campo único de URL da API + chave. Ao salvar, o sistema verifica os canais locais e os sandboxes (SEI, Folha/RH, organograma, SSO). Sucesso mostra OK em verde; falha mostra Problema em vermelho com o texto do erro. A Instrução SEI (`/relatorios-sei`) permanece o módulo de minutas.
                   </p>
                 </div>
               </div>
@@ -740,7 +740,7 @@ export default function DocumentacaoPage() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Servidores cadastrados com o perfil <code className="text-amber-300">apoio_exclusivo</code> estão legalmente impedidos de alocar esforço em entregas classificadas na atividade-fim (apoio direto). A requisição é interrompida com: <span className="text-amber-300 font-mono text-[11px]">&quot;Usuários com perfil 'apoio_exclusivo' não podem registrar esforços nesta categoria de entrega.&quot;</span>
+                    Servidores cadastrados com o perfil <code className="text-amber-300">apoio_exclusivo</code> estão impedidos de cadastrar esforços. A requisição é interrompida com: <span className="text-amber-300 font-mono text-[11px]">&quot;Usuários com perfil de apoio exclusivo não podem cadastrar esforços.&quot;</span>
                   </p>
                 </div>
               </div>

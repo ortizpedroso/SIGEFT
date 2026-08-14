@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.34-categoria
+**Versão:** 1.3.35-review
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -89,6 +89,7 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
 │   ├── alembic/env.py
 │   ├── alembic/versions/0001_create_schema.py
 │   ├── alembic/versions/0002_fusion_domain.py
+│   ├── alembic/versions/0003_integracao.py
 │   └── app/
 │       ├── main.py
 │       ├── database.py
@@ -97,12 +98,15 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
 │       ├── core/ (__init__, security, init_db, rate_limit, security_headers)
 │       ├── services/dimensionamento.py
 │       └── routers/ (auth, unidades, esforcos, simulacao, dashboard,
-│                     categorias, usuarios, entregas, ponderacao, relatorios_sei)
+│                     categorias, usuarios, entregas, ponderacao,
+│                     relatorios_sei, integracao)
+├── deploy/                    # coexistência VPS / Caddy eventosbr / DNS
 ├── src/middleware.ts          # exige cookie nas páginas
 └── src/
     ├── app/ (layout, page, login, unidades, entregas, esforcos,
-    │         ponderacao, simulacao, relatorios-sei, documentacao, api/*)
-    ├── components/ (Navbar, DashboardCharts)
+    │         ponderacao, simulacao, relatorios-sei, integracao,
+    │         documentacao, api/*)
+    ├── components/ (Navbar, DashboardCharts, CategoriaMgiField)
     ├── context/ThemeContext.tsx
     ├── lib/ (backend.ts, auth.ts, useEscape.ts)
     └── types/index.ts
@@ -112,7 +116,7 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
 
 ## 4. Automações e Rotinas de Inicialização
 
-- **Migrações Alembic** no `entrypoint.sh` do contêiner da API (`upgrade head`), inclusive `0002_fusion_domain`.
+- **Migrações Alembic** no `entrypoint.sh` do contêiner da API (`upgrade head`): `0001`, `0002_fusion_domain`, `0003_integracao`.
 - **Seed Parâmetros Globais:** ITP = 70% | Teto Apoio Indireto = 30% | pesos de ponderação (0.40 / 0.35 / 0.25) | tolerância de desvio 20%.
 - **Seed Categorias:** 7 categorias transversais MGI.
 - **Seed Unidades, Entregas, Esforços e Parecer SEI** de demonstração.
@@ -126,8 +130,11 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
 
 ## 5. Modelo de Dados Relacional
 
-Tabelas: `categorias`, `parametros`, `unidades`, `usuarios`, `entregas`, `esforcos`, `pareceres_sei`.
-UUID como PK (string). snake_case. Integridade referencial com FK.
+Tabelas: `categorias`, `parametros`, `unidades`, `usuarios`, `entregas`, `esforcos`, `pareceres_sei`, `config_texto`, `integracao_checks`.
+UUID como PK (string) nas entidades de domínio. snake_case. Integridade referencial com FK.
+
+`config_texto` guarda a API de integração (`INTEGRACAO_API` = JSON `{sandbox_url, api_key}`).
+`integracao_checks` guarda o último status/detalhe de cada canal do checklist.
 
 `entregas` inclui campos de capacidade: `carga_horaria_media`, `volume_mensal`, `complexidade`, `criticidade`, `absenteismo_pct`, `rotatividade_pct`, `capacidade_produtiva`.
 
@@ -155,7 +162,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - **POST /api/relatorios-sei:** gera minuta **embasada e circunstanciada** (CNJ 219/2016, CNJ 553/2024, DFT/MGI, ITP, teto, IPS, entregas, diagnóstico e recomendação automática). `unidadeId=todas` emite parecer consolidado de **todas as unidades**.
 - **PATCH /api/relatorios-sei/{id}:** gestor edita e grava o texto da minuta (`minutaTextoSEI`).
 - **POST /api/token** + **GET /api/me:** JWT 8h. Login com rate-limit (8/min por IP) e verificação dummy para não revelar existência de usuário.
-- **Autenticação:** todos os GET e POST em `/api/*` (exceto `POST /api/token` e `GET /`) exigem `get_current_user`.
+- **Autenticação:** todos os GET, POST e PATCH em `/api/*` (exceto `POST /api/token` e `GET /`) exigem `get_current_user`. CORS da API inclui PATCH.
 - **RBAC:** `gestor` — cadastros, ponderação, simulação Q₃ e parecer SEI; `gestor` e `executor` — POST `/api/esforcos`; `apoio_exclusivo` — somente leitura. POST esforços continua rejeitando alvo `apoio_exclusivo` (HTTP 403).
 - **SECRET_KEY** forte obrigatória quando `ENV=production` (mín. 32 caracteres). Senha do admin via `ADMIN_PASSWORD`.
 - **Cabeçalhos:** `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`. `/docs` desligado em produção.
@@ -189,7 +196,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 
 - [x] Estrutura de diretórios em ./ sem subpasta extra (`src/` na raiz, não `frontend/`).
 - [x] docker-compose.yml com POSTGRES_USER/PASSWORD/DB, healthcheck, CORS_ORIGINS, SECRET_KEY e build do Next a partir da raiz.
-- [x] models.py com as 7 tabelas mapeadas (UUID PK, snake_case), inclusive `pareceres_sei` e campos de capacidade em `entregas`.
+- [x] models.py com as 9 tabelas mapeadas (domínio + `config_texto` + `integracao_checks`), inclusive `pareceres_sei` e campos de capacidade em `entregas`.
 - [x] HTTP 400 na trava de 100% de esforço.
 - [x] HTTP 403 para apoio_exclusivo.
 - [x] Q3 com numpy + fallback Mediana automático.
@@ -200,7 +207,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - [x] Skip-link, aria no menu/modais, Escape, autocomplete, senhas fora da tela de login.
 - [x] Navbar com Esforços; ações de escrita conforme perfil DFT.
 - [x] core/init_db.py: seed ITP=70%, teto=30%, ponderação, 7 categorias, unidades/entregas demo, Super Admin e perfis.
-- [x] Alembic 0001 + 0002 cobrindo o esquema unificado.
+- [x] Alembic 0001 + 0002 + 0003 cobrindo o esquema unificado e o checklist de integração.
 - [x] pydantic[email] e python-multipart no requirements.txt.
 - [x] meta noindex/nofollow no layout.tsx.
 - [x] Alerta de cor dinâmica na UI React via GET /api/dashboard/stats.
@@ -208,6 +215,8 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - [x] UI não usa store em memória; BFF proxy para FastAPI.
 - [x] Nenhuma segunda fonte de verdade de dados.
 - [x] Instrução SEI: seletor Todas as unidades; minuta circunstanciada automática; PATCH para salvar edição (gestor).
+- [x] POST `/api/categorias` (gestor); UI **Cadastrar nova categoria MGI** em Unidades e Simulação.
+- [x] Integração: um par URL+chave; Salvar verifica canais; OK verde / Problema vermelho.
 
 ---
 
@@ -249,3 +258,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.32-sei-minuta | 2026-08-14 | Navbar: Ponderação antes de Simulação. Instrução SEI: opção Todas as unidades; minuta circunstanciada automática; editar e salvar (PATCH). |
 | 1.3.33-doc-hero | 2026-08-14 | Topo de `/documentacao`: título e lead com contraste travado (`.doc-hero`) no claro e no escuro. |
 | 1.3.34-categoria | 2026-08-14 | Cadastro de nova Categoria MGI (POST `/api/categorias`) no formulário de Unidades e na Simulação. |
+| 1.3.35-review | 2026-08-14 | /review: spec alinhada ao código (9 tabelas, Alembic 0003, PATCH autenticado, árvore com `/integracao` e `CategoriaMgiField`). Documentação e validação Pydantic do nome da categoria corrigidas. |

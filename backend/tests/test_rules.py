@@ -220,6 +220,11 @@ def test_rbac_gestor_executor_apoio(client: TestClient, db: Session):
         headers=_auth_header(gestor.id),
         json={"nome": "Gestão Documental", "ips": 70},
     ).status_code == 409
+    assert client.post(
+        "/api/categorias",
+        headers=_auth_header(gestor.id),
+        json={"nome": "", "ips": 70},
+    ).status_code == 422
 
 
 def test_login_invalido_nao_revela_usuario(client: TestClient):

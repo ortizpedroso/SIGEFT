@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Métrica TJRR — API",
     description="Dimensionamento da Força de Trabalho (MGI / Resolução CNJ nº 219/2016)",
-    version="1.3.19",
+    version="1.3.35",
     lifespan=lifespan,
     docs_url=_docs,
     redoc_url=_redoc,
