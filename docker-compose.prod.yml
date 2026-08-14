@@ -1,7 +1,8 @@
-# Produção na VPS compartilhada (www.eventosbr.app.br já usa 80/443).
-# A Métrica NÃO publica 80/443. O Nginx/Apache/OLS existente faz o proxy.
+# Produção na VPS compartilhada (www.eventosbr.app.br já usa 80/443 via Caddy).
+# A Métrica NÃO publica 80/443. O Caddy do eventosbr faz o proxy.
 #
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#   bash deploy/hook-eventosbr-caddy.sh
 #
 # Só publique a web em 127.0.0.1:3001. Postgres e FastAPI ficam na rede interna.
 
@@ -57,6 +58,14 @@ services:
       - "127.0.0.1:3001:3000"
     depends_on:
       - api
+    networks:
+      - default
+      - eventosbr_internal
 
 volumes:
   postgres_data:
+
+networks:
+  eventosbr_internal:
+    external: true
+    name: eventosbr_eventosbr_internal
