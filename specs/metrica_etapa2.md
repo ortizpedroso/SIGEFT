@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.28-sandbox
+**Versão:** 1.3.29-contrast
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -162,7 +162,8 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 
 ## 7. UI, UX, SEO, Temas e Segurança
 
-- Tailwind CSS com paleta corporativa executiva e judiciária. Grid: 1 col mobile / 4 col desktop.
+- Tailwind CSS com paleta corporativa TJRR: azul `#1d4ed8`/`#2563eb`, verde Roraima `#047857`, dourado `#d97706`, canvas escuro `#060b18`. Texto secundário no escuro ≥ slate-400 (`#cbd5e1`) para 4.5:1. Grid: 1 col mobile / 4 col desktop.
+- **Modo Claro:** inverte só o `main` (cartões claros, texto `#0f172a`). A **Navbar permanece azul institucional** (`#0b1736` + texto claro) — não herda `text-white` invertido. Botões primários (`bg-blue-700`) mantêm texto branco.
 - **Modo Claro / Modo Escuro:** `ThemeContext` e toggle no `Navbar.tsx` com persistência em `localStorage` (`sigep_theme`).
 - **Resiliência e Hidratação:** proteção `mounted` nos Recharts e `suppressHydrationWarning` no HTML/body.
 - meta `robots: noindex, nofollow` em todas as páginas (`layout.tsx`) e header `X-Robots-Tag`.
@@ -235,3 +236,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.26-integracao | 2026-08-14 | Restaura o rótulo **Integração SEI** na Navbar e no atalho do dashboard (`/relatorios-sei`). |
 | 1.3.27-integracao | 2026-08-14 | **Instrução SEI** e **Integração** voltam a ser itens distintos. Nova rota `/integracao` (hub de canais); `/relatorios-sei` permanece o módulo de minutas. |
 | 1.3.28-sandbox | 2026-08-14 | Integração vira checklist da API sandbox: URL persistida, testes GET por canal, checks locais do Métrica. Alembic 0003. |
+| 1.3.29-contrast | 2026-08-14 | Paleta: Navbar não inverte no modo claro; texto secundário no escuro elevado a `#cbd5e1`; botões primários com texto branco; gráficos com eixos/tooltip por tema; login no azul institucional. |

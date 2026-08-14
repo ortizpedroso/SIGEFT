@@ -102,7 +102,7 @@ export default function LoginPage() {
           <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-slate-900/80 p-8 backdrop-blur-md shadow-2xl flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-700 text-white shadow-lg shadow-blue-700/30">
                   <ShieldCheck className="h-7 w-7" />
                 </div>
                 <div>
@@ -178,7 +178,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-indigo-500 active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full mt-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-blue-600 active:scale-95 flex items-center justify-center gap-2"
                 >
                   {loading ? 'Autenticando...' : 'Entrar no Sistema'}
                   <ArrowRight className="w-4 h-4" />

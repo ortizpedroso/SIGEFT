@@ -15,6 +15,7 @@ import {
   Cell,
   ReferenceLine,
 } from 'recharts';
+import { useTheme } from '@/context/ThemeContext';
 import type { UnidadeChartData, CategoriaChartData } from '@/types';
 import { BarChart3, PieChart as PieIcon, TrendingUp, AlertTriangle, ShieldCheck } from 'lucide-react';
 
@@ -33,15 +34,25 @@ export default function DashboardCharts({
   pctEsforcoIndireto,
   alertaCnj,
 }: DashboardChartsProps) {
+  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Institutional TJRR Color Palette for Charts
+  const isLight = theme === 'light';
+  const axis = isLight ? '#334155' : '#cbd5e1';
+  const grid = isLight ? '#cbd5e1' : '#334155';
+  const tooltipStyle = {
+    backgroundColor: isLight ? '#ffffff' : '#0f172a',
+    borderColor: isLight ? '#cbd5e1' : '#334155',
+    borderRadius: '12px',
+    color: isLight ? '#0f172a' : '#f8fafc',
+    fontSize: '12px',
+  };
   const COLORS_DONUT = ['#2563eb', '#d97706', '#059669', '#0284c7'];
-  const COLORS_PERFIL = ['#2563eb', '#f59e0b', '#059669'];
+  const COLORS_PERFIL = ['#1d4ed8', '#d97706', '#047857'];
 
   const donutData = [
     { name: 'Apoio Direto (Atividade Fim)', value: Math.max(0, 100 - pctEsforcoIndireto) },
@@ -153,26 +164,18 @@ export default function DashboardCharts({
             <div className="h-72 w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={unidadesData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={grid} opacity={0.7} />
                   <XAxis
                     dataKey="nome"
-                    stroke="#94a3b8"
+                    stroke={axis}
                     fontSize={11}
                     tickLine={false}
                     interval={0}
                     angle={-15}
                     textAnchor="end"
                   />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
-                      borderRadius: '12px',
-                      color: '#f8fafc',
-                      fontSize: '12px',
-                    }}
-                  />
+                  <YAxis stroke={axis} fontSize={11} tickLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                   <Bar dataKey="servidores_atuais" name="Lotação Atual" fill="#2563eb" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="lotacao_ideal" name="Lotação Ideal (Calculada)" fill="#10b981" radius={[6, 6, 0, 0]} />
@@ -211,13 +214,7 @@ export default function DashboardCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
-                      borderRadius: '12px',
-                      color: '#f8fafc',
-                      fontSize: '12px',
-                    }}
+                    contentStyle={tooltipStyle}
                     formatter={(val: any) => [`${Number(val).toFixed(1)}%`, 'Proporção']}
                   />
                 </PieChart>
@@ -265,26 +262,18 @@ export default function DashboardCharts({
           <div className="h-64 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoriasData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} opacity={0.7} />
                 <XAxis
                   dataKey="nome"
-                  stroke="#94a3b8"
+                  stroke={axis}
                   fontSize={11}
                   tickLine={false}
                   interval={0}
                   angle={-15}
                   textAnchor="end"
                 />
-                <YAxis stroke="#94a3b8" fontSize={11} domain={[50, 100]} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    borderRadius: '12px',
-                    color: '#f8fafc',
-                    fontSize: '12px',
-                  }}
-                />
+                <YAxis stroke={axis} fontSize={11} domain={[50, 100]} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <ReferenceLine y={80} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Meta Média (80)', fill: '#f59e0b', fontSize: 10 }} />
                 <Bar dataKey="ips_medio" name="IPS Médio Apurado" fill="#38bdf8" radius={[6, 6, 0, 0]} />
@@ -320,13 +309,7 @@ export default function DashboardCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
-                      borderRadius: '12px',
-                      color: '#f8fafc',
-                      fontSize: '12px',
-                    }}
+                    contentStyle={tooltipStyle}
                     formatter={(value: any, name: any) => [`${value} servidores`, name]}
                   />
                 </PieChart>

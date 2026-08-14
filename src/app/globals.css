@@ -44,15 +44,59 @@ body {
   outline-offset: 2px;
 }
 
-/* Light Theme Overrides (TJRR Executive Judicial Light Canvas) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark: texto secundário mais claro (slate-400/500 sumiam em cartões) */
+html:not(.light) .text-slate-600 {
+  color: #94a3b8;
+}
+html:not(.light) .text-slate-500 {
+  color: #94a3b8;
+}
+html:not(.light) .text-slate-400 {
+  color: #cbd5e1;
+}
+html:not(.light) .placeholder-slate-500::placeholder {
+  color: #94a3b8;
+}
+
+/* Light Theme: inverte o CANVAS, não a Navbar institucional */
 html.light body {
-  background-color: #f8fafc;
+  background-color: #f1f5f9;
   color: #0f172a;
 }
 
-/* Structural Backgrounds - TJRR Judicial Navy & Clean Cards */
+html.light .site-header,
+html.light .site-header .text-white,
+html.light .site-header .text-slate-100,
+html.light .site-header .text-slate-200 {
+  color: #f8fafc !important;
+}
+html.light .site-header .text-blue-100,
+html.light .site-header .text-blue-200,
+html.light .site-header .text-blue-200\/80,
+html.light .site-header .text-blue-200\/90,
+html.light .site-header .text-blue-300 {
+  color: #bfdbfe !important;
+}
+html.light .site-header .text-amber-300,
+html.light .site-header .text-amber-400 {
+  color: #fcd34d !important;
+}
+html.light .site-header .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
 html.light .bg-slate-950 {
-  background-color: #f8fafc !important;
+  background-color: #f1f5f9 !important;
 }
 html.light .bg-slate-900 {
   background-color: #ffffff !important;
@@ -63,58 +107,70 @@ html.light .bg-slate-900\/40,
 html.light .bg-slate-900\/90 {
   background-color: #ffffff !important;
 }
+html.light .bg-slate-950\/50,
 html.light .bg-slate-950\/60,
 html.light .bg-slate-950\/80,
 html.light .bg-slate-950\/90 {
-  background-color: #f1f5f9 !important;
+  background-color: #e2e8f0 !important;
 }
 
-/* Typography Hierarchy */
-html.light .text-white {
+html.light main .text-white {
   color: #0f172a !important;
 }
-html.light .text-slate-100 {
+html.light main .text-slate-100 {
+  color: #0f172a !important;
+}
+html.light main .text-slate-200 {
   color: #1e293b !important;
 }
-html.light .text-slate-200 {
+html.light main .text-slate-300 {
   color: #334155 !important;
 }
-html.light .text-slate-300 {
-  color: #475569 !important;
-}
-html.light .text-slate-400 {
-  color: #64748b !important;
-}
-html.light .text-slate-500 {
-  color: #64748b !important;
+html.light main .text-slate-400,
+html.light main .text-slate-500,
+html.light main .text-slate-600 {
+  color: #334155 !important;
 }
 
-/* Borders and Dividers */
 html.light .border-white\/10,
-html.light .border-white\/5 {
-  border-color: #e2e8f0 !important;
-}
-html.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e2e8f0 !important;
-}
-
-/* Shadows */
-html.light .shadow-xl,
-html.light .shadow-2xl {
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02) !important;
-}
-
-/* Inputs, Selects, Textareas */
-html.light input:not([type="range"]), 
-html.light select, 
-html.light textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+html.light .border-white\/5,
+html.light .border-white\/6 {
   border-color: #cbd5e1 !important;
 }
-html.light input::placeholder, 
-html.light textarea::placeholder {
-  color: #94a3b8 !important;
+html.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .shadow-xl,
+html.light .shadow-2xl {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04) !important;
+}
+
+html.light main input:not([type="range"]),
+html.light main select,
+html.light main textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+html.light main input::placeholder,
+html.light main textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.light main .bg-blue-700,
+html.light main .bg-blue-600,
+html.light main .bg-blue-500,
+html.light main .bg-indigo-600,
+html.light main .hover\:bg-blue-600:hover,
+html.light main .hover\:bg-blue-500:hover,
+html.light main .hover\:bg-indigo-500:hover {
+  color: #ffffff !important;
+}
+html.light main .bg-blue-700 .text-white,
+html.light main .bg-blue-600 .text-white,
+html.light main .bg-indigo-600 .text-white {
+  color: #ffffff !important;
 }
 
 /* Range Slider Styling - Enhanced Visibility for Dark & Light Themes */
@@ -274,11 +330,11 @@ html.light .bg-blue-600\/20 {
   background-color: #eff6ff !important;
   border-color: #bfdbfe !important;
 }
-html.light .text-blue-200,
-html.light .text-blue-300,
-html.light .text-blue-400,
-html.light .text-blue-500 {
-  color: #1e40af !important; /* Dark Blue for high contrast */
+html.light main .text-blue-200,
+html.light main .text-blue-300,
+html.light main .text-blue-400,
+html.light main .text-blue-500 {
+  color: #1e3a8a !important;
 }
 
 html.light .bg-emerald-500\/10,
@@ -289,10 +345,10 @@ html.light .bg-emerald-950\/40 {
   background-color: #f0fdf4 !important;
   border-color: #bbf7d0 !important;
 }
-html.light .text-emerald-200,
-html.light .text-emerald-300,
-html.light .text-emerald-400 {
-  color: #065f46 !important; /* Dark Emerald for high contrast */
+html.light main .text-emerald-200,
+html.light main .text-emerald-300,
+html.light main .text-emerald-400 {
+  color: #065f46 !important;
 }
 
 html.light .bg-amber-500\/10,
@@ -304,10 +360,10 @@ html.light .bg-amber-950\/50 {
   background-color: #fffbeb !important;
   border-color: #fde68a !important;
 }
-html.light .text-amber-200,
-html.light .text-amber-300,
-html.light .text-amber-400 {
-  color: #92400e !important; /* Dark Amber/Gold for high contrast */
+html.light main .text-amber-200,
+html.light main .text-amber-300,
+html.light main .text-amber-400 {
+  color: #92400e !important;
 }
 
 html.light .bg-rose-500\/10,
@@ -319,14 +375,14 @@ html.light .bg-rose-950\/50 {
   background-color: #fff1f2 !important;
   border-color: #fecdd3 !important;
 }
-html.light .text-rose-200,
-html.light .text-rose-300,
-html.light .text-rose-400 {
-  color: #9f1239 !important; /* Dark Red/Rose for high contrast */
+html.light main .text-rose-200,
+html.light main .text-rose-300,
+html.light main .text-rose-400 {
+  color: #9f1239 !important;
 }
 
-/* Interactive Hover States */
-html.light .hover\:bg-white\/5:hover {
-  background-color: #f1f5f9 !important;
+html.light .hover\:bg-white\/5:hover,
+html.light .hover\:bg-white\/10:hover {
+  background-color: #e2e8f0 !important;
 }
 
