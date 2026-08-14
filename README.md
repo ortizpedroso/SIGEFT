@@ -87,10 +87,12 @@ chmod +x deploy/hostinger.sh
 ./deploy/hostinger.sh
 ```
 
-3. No servidor web **já existente** na VPS, adicione um vhost **novo** (não edite o do eventosbr). Troque `server_name` pelo hostname do DNS (`sigep.inovesw.com.br` ou o que você criou):
+3. O **Caddy do eventosbr** (`eventosbr-caddy-1`) já ocupa 80/443. Não suba outro Caddy. Depois do compose:
 
-- Nginx: `deploy/nginx-sigep.conf` + `certbot --nginx -d SEU_HOST`
-- Apache: `deploy/apache-sigep.conf` + `certbot --apache -d SEU_HOST`
-- OpenLiteSpeed: `deploy/openlitespeed-sigep.txt`
+```bash
+bash deploy/hook-eventosbr-caddy.sh
+```
+
+Isso acrescenta `sigep.inovesw.com.br` no Caddyfile existente (Let's Encrypt) e liga o container web à rede do eventosbr. Não edite o bloco de `www.eventosbr.app.br`.
 
 A API e o PostgreSQL **não** ficam expostos na internet. `www.eventosbr.app.br` e `www.inovesw.com.br` continuam onde já estão.
