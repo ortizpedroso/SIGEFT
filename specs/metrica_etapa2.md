@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.29-contrast
+**Versão:** 1.3.30-integracao
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -150,7 +150,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - **GET /api/unidades:** enriquece com `servidores_atuais`, `lotacao_ideal`, `balanco`, `status_dimensionamento`.
 - **POST /api/entregas:** calcula `capacidade_produtiva`.
 - **GET/POST /api/ponderacao:** lê/grava pesos em `parametros`.
-- **GET/POST /api/integracao** e **POST /api/integracao/testar:** checklist de sandbox (URL + health de SEI/folha/auth) e checks locais. Gestor grava URL e dispara testes.
+- **GET/POST /api/integracao** e **POST /api/integracao/testar:** catálogo de conectores do sistema. Locais (API Métrica, unidades, entregas, esforços, ponderação, minutas SEI) são testados no GET. Sandbox (SEI, Folha/RH, organograma, SSO) grava URL + chave por conector (`INTEGRACAO_{id}` em `config_texto`); o POST **salva e testa na hora**. Chave mascarada (`••••last4`). Falha devolve dica (401/404/timeout/rede).
 - **POST /api/token** + **GET /api/me:** JWT 8h. Login com rate-limit (8/min por IP) e verificação dummy para não revelar existência de usuário.
 - **Autenticação:** todos os GET e POST em `/api/*` (exceto `POST /api/token` e `GET /`) exigem `get_current_user`.
 - **RBAC:** `gestor` — cadastros, ponderação, simulação Q₃ e parecer SEI; `gestor` e `executor` — POST `/api/esforcos`; `apoio_exclusivo` — somente leitura. POST esforços continua rejeitando alvo `apoio_exclusivo` (HTTP 403).
@@ -174,7 +174,8 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - Página oculta `/documentacao` (autenticada).
 - Acessibilidade: skip-link, `lang=pt-BR`, `focus-visible`, `aria-label`/`aria-expanded` no menu, `aria-modal` nos diálogos, Escape fecha modal, `autocomplete` no login.
 - UX de perfil: botões de escrita ocultos para quem não tem permissão; módulo Esforços no Navbar.
-- **Integração** (`/integracao`): checklist para URL da API sandbox e testes por canal (`/health`, `/sei/health`, `/folha/health`, etc.). **Instrução SEI** (`/relatorios-sei`) permanece o módulo de minutas.
+- **Integração** (`/integracao`): cada canal externo tem URL sandbox + chave de API; **Salvar e testar** dispara o GET autenticado sozinho. Sucesso → selo **OK** + **Ver** (evidência). Falha → cartão “O que fazer”. Checks locais do próprio Métrica aparecem no mesmo painel. **Instrução SEI** (`/relatorios-sei`) permanece o módulo de minutas.
+- **Navbar:** rótulos sempre visíveis no desktop, com wrap e padding (`px-3.5 py-2.5`); hover âmbar `#fbbf24` com texto navy (não some o nome). Tooltip `.nav-tooltip` com o mesmo contraste. Botão **Salvar e testar** (`.btn-salvar-integracao`) âmbar/navy no escuro e âmbar-escuro/branco no claro.
 - Tema sem FOUC: script de boot lê `sigep_theme` antes da pintura.
 
 ---
@@ -237,3 +238,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.27-integracao | 2026-08-14 | **Instrução SEI** e **Integração** voltam a ser itens distintos. Nova rota `/integracao` (hub de canais); `/relatorios-sei` permanece o módulo de minutas. |
 | 1.3.28-sandbox | 2026-08-14 | Integração vira checklist da API sandbox: URL persistida, testes GET por canal, checks locais do Métrica. Alembic 0003. |
 | 1.3.29-contrast | 2026-08-14 | Paleta: Navbar não inverte no modo claro; texto secundário no escuro elevado a `#cbd5e1`; botões primários com texto branco; gráficos com eixos/tooltip por tema; login no azul institucional. |
+| 1.3.30-integracao | 2026-08-14 | Integração por conector (URL sandbox + chave); teste automático ao salvar; OK+Ver ou dica de falha. Catálogo: 6 checks locais + SEI, Folha/RH, organograma e SSO. Navbar com rótulos sem espremer e hover/tooltip de alto contraste; botão Salvar e testar visível. |

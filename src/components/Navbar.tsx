@@ -3,13 +3,32 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, User, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2 } from 'lucide-react';
+import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StoredUser {
   email: string;
   perfil_dft: string;
   unidade_nome?: string;
+}
+
+const navItems = [
+  { href: '/', label: 'Painel', icon: LayoutDashboard },
+  { href: '/unidades', label: 'Unidades', icon: Building2 },
+  { href: '/entregas', label: 'Entregas', icon: Package },
+  { href: '/esforcos', label: 'Esforços', icon: Users },
+  { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
+  { href: '/simulacao', label: 'Q₃', icon: BarChart3 },
+  { href: '/ponderacao', label: 'Ponderação', icon: Sliders },
+  { href: '/integracao', label: 'Integração', icon: Link2 },
+];
+
+function NavTip({ label }: { label: string }) {
+  return (
+    <span className="nav-tooltip pointer-events-none absolute left-1/2 top-full z-[80] mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold shadow-lg group-hover:block group-focus-visible:block">
+      {label}
+    </span>
+  );
 }
 
 export default function Navbar() {
@@ -30,7 +49,6 @@ export default function Navbar() {
     }
   }, [pathname]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
@@ -46,63 +64,32 @@ export default function Navbar() {
     router.push('/login');
   };
 
-  const navItems = [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/unidades', label: 'Unidades', icon: Building2 },
-    { href: '/entregas', label: 'Entregas & Capacidade', icon: Package },
-    { href: '/esforcos', label: 'Esforços', icon: Users },
-    { href: '/ponderacao', label: 'Motor de Ponderação', icon: Sliders },
-    { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
-    { href: '/integracao', label: 'Integração', icon: Link2 },
-    { href: '/simulacao', label: 'Simulação Q₃', icon: BarChart3 },
-  ];
+  const linkClass = (active: boolean) =>
+    `group relative inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold leading-none transition-colors ${
+      active
+        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+        : 'text-white hover:bg-amber-300 hover:text-slate-950'
+    }`;
 
   return (
-    <header className="site-header sticky top-0 z-50 border-b border-blue-500/25 bg-[#0b1736] text-white shadow-lg shadow-blue-950/40 backdrop-blur-md">
-      <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 sm:px-6 py-3">
-        
-        {/* Brand / Logo */}
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-amber-400 text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
-            <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-amber-300" />
+    <header className="site-header sticky top-0 z-50 overflow-visible border-b border-blue-500/25 bg-[#0b1736] text-white shadow-lg shadow-blue-950/40">
+      <div className="mx-auto flex max-w-[96rem] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 group">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-amber-400 text-white shadow-lg shadow-blue-600/20">
+            <ShieldCheck className="h-5 w-5 text-amber-300" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="text-sm sm:text-base font-bold text-white tracking-tight">SIGEP-Força</span>
-              <span className="rounded-md bg-amber-400/10 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30">
-                TJRR · SUBGFT
-              </span>
-            </div>
-            <p className="text-[10px] sm:text-[11px] text-blue-200/90 font-medium hidden sm:block">
-              Dimensionamento da Força de Trabalho · CNJ 219 & DFT/MGI
-            </p>
+          <div className="hidden min-[420px]:block">
+            <span className="block text-sm font-bold text-white tracking-tight">SIGEP-Força</span>
+            <span className="hidden text-[10px] font-bold uppercase tracking-wider text-amber-300 xl:inline">
+              TJRR · SUBGFT
+            </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-1 bg-[#071026]/80 p-1.5 rounded-2xl border border-blue-500/20">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                    : 'text-blue-200/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Tablet Navigation Links (Medium screens) */}
-        <nav className="hidden md:flex xl:hidden items-center gap-1 bg-[#071026]/80 p-1 rounded-xl border border-blue-500/20">
+        <nav
+          className="hidden min-w-0 flex-1 flex-wrap items-center justify-start gap-2 md:flex"
+          aria-label="Principal"
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -111,71 +98,59 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 title={item.label}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                    : 'text-blue-200/80 hover:bg-white/10 hover:text-white'
-                }`}
+                className={linkClass(isActive)}
               >
-                <Icon className="h-4 w-4" />
-                <span className="hidden lg:inline">{item.label}</span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Right Actions: Theme Toggle, Profile & Mobile Menu Button */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 ml-2 sm:ml-4 pl-2 sm:pl-3 border-l border-blue-500/20">
-          {/* Light / Dark Mode Toggle */}
+        <div className="ml-auto flex shrink-0 items-center gap-3 border-l border-blue-500/20 pl-4">
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#071026]/90 border border-blue-400/30 text-amber-300 hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm"
-            title={theme === 'dark' ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+            className="group relative flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/40 bg-[#071026] text-amber-300 hover:bg-amber-300 hover:text-slate-950"
             aria-label={theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
             aria-pressed={theme === 'light'}
+            title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
           >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4 text-amber-300" />
-            ) : (
-              <Moon className="h-4 w-4 text-amber-300" />
-            )}
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            <NavTip label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'} />
           </button>
 
           {user ? (
-            <div className="flex items-center gap-2 sm:gap-3 bg-[#071026]/90 px-2.5 py-1.5 rounded-xl border border-blue-500/20">
-              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-300">
-                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </div>
-              <div className="hidden sm:block text-left text-xs">
-                <p className="font-semibold text-slate-100">{user.email.split('@')[0]}</p>
-                <p className="text-[10px] uppercase font-bold text-amber-400">{user.perfil_dft}</p>
+            <div className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-[#071026] px-3 py-1.5">
+              <div className="hidden text-left text-xs sm:block">
+                <p className="font-semibold text-white">{user.email.split('@')[0]}</p>
+                <p className="text-[10px] font-bold uppercase text-amber-300">{user.perfil_dft}</p>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                title="Sair do sistema"
                 aria-label="Sair do sistema"
-                className="text-slate-400 hover:text-rose-400 transition-colors p-1"
+                title="Sair"
+                className="group relative flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-rose-600 hover:text-white"
               >
                 <LogOut className="h-4 w-4" />
+                <NavTip label="Sair" />
               </button>
             </div>
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 text-xs font-semibold shadow-md shadow-blue-600/30 transition-all"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-500"
             >
               <LogIn className="h-4 w-4" />
-              <span className="hidden sm:inline">Entrar</span>
+              Entrar
             </Link>
           )}
 
-          {/* Mobile Menu Toggle Button */}
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl bg-[#071026]/90 border border-blue-400/30 text-blue-200 hover:bg-blue-600 hover:text-white transition-all active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/40 bg-[#071026] text-white hover:bg-amber-300 hover:text-slate-950 md:hidden"
             aria-label={isMobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
             aria-expanded={isMobileMenuOpen}
             aria-controls="menu-navegacao-mobile"
@@ -183,15 +158,10 @@ export default function Navbar() {
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
-
       </div>
 
-      {/* Mobile Navigation Dropdown Drawer */}
       {isMobileMenuOpen && (
-        <div id="menu-navegacao-mobile" className="md:hidden border-t border-blue-500/20 bg-[#071026] px-4 py-4 space-y-2 shadow-2xl animate-in slide-in-from-top-2 duration-200">
-          <div className="text-[10px] uppercase font-bold tracking-wider text-blue-300/80 px-3 mb-1">
-            Menu de Navegação
-          </div>
+        <div id="menu-navegacao-mobile" className="border-t border-blue-500/20 bg-[#071026] px-4 py-3 md:hidden">
           <div className="grid grid-cols-1 gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -201,30 +171,18 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold ${
+                    isActive ? 'bg-blue-600 text-white' : 'text-white hover:bg-amber-300 hover:text-slate-950'
                   }`}
                 >
                   <Icon className="h-4 w-4 text-amber-300 shrink-0" />
-                  <span>{item.label}</span>
+                  {item.label}
                 </Link>
               );
             })}
           </div>
-
-          {user && (
-            <div className="pt-3 border-t border-blue-500/20 mt-2 px-3 flex items-center justify-between text-xs text-blue-200">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-amber-300" />
-                <span>Logado como: <strong className="text-white">{user.email}</strong> ({user.perfil_dft})</span>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </header>
   );
 }
-

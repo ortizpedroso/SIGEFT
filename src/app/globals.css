@@ -94,6 +94,46 @@ html.light .site-header .text-amber-400 {
 html.light .site-header .text-slate-400 {
   color: #cbd5e1 !important;
 }
+html.light .site-header .hover\:text-slate-950:hover {
+  color: #0b1736 !important;
+}
+html.light .site-header a.bg-blue-600,
+html.light .site-header a.bg-blue-600:hover {
+  color: #ffffff !important;
+}
+
+/* Tooltip do menu: âmbar + texto navy — não herda o branco da Navbar */
+.nav-tooltip {
+  background: #fbbf24 !important;
+  color: #0b1736 !important;
+  border: 1px solid #0b1736 !important;
+}
+html.light .site-header .nav-tooltip {
+  background: #fbbf24 !important;
+  color: #0b1736 !important;
+}
+
+/* Botão Salvar e testar: alto contraste nos dois temas */
+.btn-salvar-integracao {
+  background: #fbbf24 !important;
+  color: #0b1736 !important;
+  border: 2px solid #f59e0b !important;
+}
+.btn-salvar-integracao:hover {
+  background: #f59e0b !important;
+  color: #0b1736 !important;
+}
+html.light .btn-salvar-integracao,
+html.light main .btn-salvar-integracao {
+  background: #b45309 !important;
+  color: #ffffff !important;
+  border-color: #78350f !important;
+}
+html.light .btn-salvar-integracao:hover,
+html.light main .btn-salvar-integracao:hover {
+  background: #92400e !important;
+  color: #ffffff !important;
+}
 
 html.light .bg-slate-950 {
   background-color: #f1f5f9 !important;

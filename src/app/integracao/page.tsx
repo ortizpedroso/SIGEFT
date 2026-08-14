@@ -3,49 +3,62 @@
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
-import { Link2, ShieldCheck, Play, CheckCircle2, XCircle, CircleDashed, Clock } from 'lucide-react';
+import { Link2, ShieldCheck, CheckCircle2, XCircle, CircleDashed, Clock, Eye, AlertTriangle, Save } from 'lucide-react';
 
-type CheckItem = {
+type Item = {
   id: string;
   nome: string;
-  grupo: string;
   descricao: string;
+  obrigatorio: boolean;
+  precisa_url: boolean;
+  precisa_chave: boolean;
   kind: string;
-  path?: string | null;
+  sandbox_url: string;
+  api_key_masked: string;
+  has_key: boolean;
   status: string;
   detalhe?: string | null;
+  evidencia?: string | null;
+  dica?: string | null;
   testado_em?: string | null;
-  sandbox_obrigatorio?: boolean;
 };
 
 type Payload = {
-  sandbox_url: string;
-  resumo: { ok: number; total: number };
-  items: CheckItem[];
+  resumo: { ok: number; total: number; obrigatorios_ok: number; obrigatorios_total: number };
+  items: Item[];
 };
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === 'ok') return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
-  if (status === 'falha') return <XCircle className="h-4 w-4 text-rose-400" />;
-  if (status === 'aguardando') return <Clock className="h-4 w-4 text-amber-300" />;
-  return <CircleDashed className="h-4 w-4 text-slate-500" />;
-}
-
-function statusLabel(status: string) {
-  if (status === 'ok') return 'OK';
-  if (status === 'falha') return 'Falha';
-  if (status === 'aguardando') return 'Aguardando sandbox';
-  return 'Pendente';
+  if (status === 'ok') return <CheckCircle2 className="h-5 w-5 text-emerald-400" />;
+  if (status === 'falha') return <XCircle className="h-5 w-5 text-rose-400" />;
+  if (status === 'aguardando') return <Clock className="h-5 w-5 text-amber-300" />;
+  return <CircleDashed className="h-5 w-5 text-slate-400" />;
 }
 
 export default function IntegracaoPage() {
   const [data, setData] = useState<Payload | null>(null);
-  const [sandboxUrl, setSandboxUrl] = useState('');
+  const [drafts, setDrafts] = useState<Record<string, { url: string; key: string }>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verId, setVerId] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
   const canEdit = canWriteCadastro(perfil);
+
+  const applyPayload = (payload: Payload) => {
+    setData(payload);
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (const item of payload.items) {
+        if (!next[item.id]) {
+          next[item.id] = { url: item.sandbox_url || '', key: '' };
+        } else {
+          next[item.id] = { ...next[item.id], url: item.sandbox_url || next[item.id].url };
+        }
+      }
+      return next;
+    });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -53,12 +66,10 @@ export default function IntegracaoPage() {
     try {
       const res = await apiFetch('/api/integracao');
       if (!res.ok) {
-        setError(apiErrorMessage(await res.json().catch(() => null), 'Não foi possível carregar o checklist.'));
+        setError(apiErrorMessage(await res.json().catch(() => null), 'Não foi possível carregar as integrações.'));
         return;
       }
-      const payload = (await res.json()) as Payload;
-      setData(payload);
-      setSandboxUrl(payload.sandbox_url || '');
+      applyPayload((await res.json()) as Payload);
     } catch {
       setError('Falha ao carregar Integração.');
     } finally {
@@ -71,51 +82,36 @@ export default function IntegracaoPage() {
     load();
   }, []);
 
-  const saveUrl = async () => {
-    setBusy('save');
+  const saveAndTest = async (id: string) => {
+    setBusy(id);
     setError(null);
+    const draft = drafts[id] || { url: '', key: '' };
     try {
+      const body: { id: string; sandbox_url: string; api_key?: string } = {
+        id,
+        sandbox_url: draft.url,
+      };
+      if (draft.key.trim()) body.api_key = draft.key.trim();
       const res = await apiFetch('/api/integracao', {
         method: 'POST',
         headers: jsonAuthHeaders(),
-        body: JSON.stringify({ sandbox_url: sandboxUrl }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setError(apiErrorMessage(await res.json().catch(() => null), 'Não foi possível salvar a URL.'));
+        setError(apiErrorMessage(await res.json().catch(() => null), 'Não foi possível salvar e testar.'));
         return;
       }
       const payload = (await res.json()) as Payload;
-      setData(payload);
+      applyPayload(payload);
+      setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], key: '' } }));
+      const updated = payload.items.find((item) => item.id === id);
+      if (updated?.status === 'ok') setVerId(id);
     } catch {
-      setError('Erro ao salvar URL sandbox.');
+      setError('Erro ao salvar a integração.');
     } finally {
       setBusy(null);
     }
   };
-
-  const runTests = async (id?: string) => {
-    setBusy(id || 'all');
-    setError(null);
-    try {
-      const res = await apiFetch('/api/integracao/testar', {
-        method: 'POST',
-        headers: jsonAuthHeaders(),
-        body: JSON.stringify(id ? { id } : {}),
-      });
-      if (!res.ok) {
-        setError(apiErrorMessage(await res.json().catch(() => null), 'Falha ao testar.'));
-        return;
-      }
-      setData((await res.json()) as Payload);
-    } catch {
-      setError('Erro ao executar testes.');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const locais = data?.items.filter((i) => i.grupo === 'local') || [];
-  const sandbox = data?.items.filter((i) => i.grupo === 'sandbox') || [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -128,136 +124,151 @@ export default function IntegracaoPage() {
               <Link2 className="w-7 h-7 text-blue-500" />
               Integração
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Checklist para apontar a API sandbox e testar cada canal. A Instrução SEI (minutas) continua em menu próprio.
+            <p className="text-sm text-slate-300 mt-1">
+              Cada sistema externo usa a própria URL sandbox e chave de API. Ao salvar, o teste roda sozinho.
             </p>
           </div>
           {data && (
-            <div className="rounded-lg border border-blue-500/20 bg-blue-950/30 px-3 py-1.5 text-xs font-semibold text-blue-200">
-              {data.resumo.ok}/{data.resumo.total} checks OK
+            <div className="rounded-lg border border-blue-400/40 bg-blue-950/50 px-3 py-2 text-xs font-semibold text-blue-100">
+              Obrigatórias OK: {data.resumo.obrigatorios_ok}/{data.resumo.obrigatorios_total}
             </div>
           )}
         </div>
 
-        <div className="mb-8 p-5 rounded-2xl border border-blue-500/30 bg-blue-950/20 text-slate-300 text-xs leading-relaxed flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+        <div className="mb-6 p-4 rounded-2xl border border-blue-400/40 bg-blue-950/30 text-slate-200 text-xs leading-relaxed flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-blue-300 shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold text-white block mb-0.5">Sandbox primeiro</span>
-            Grave a URL base da API sandbox (ex.: <code className="text-amber-300">https://sandbox.exemplo/api</code>).
-            Os itens locais validam o Métrica; os itens sandbox fazem GET nos caminhos <code className="text-amber-300">/health</code>,{' '}
-            <code className="text-amber-300">/auth/health</code>, <code className="text-amber-300">/sei/health</code>,{' '}
-            <code className="text-amber-300">/folha/health</code> e <code className="text-amber-300">/unidades/health</code>.
+            <span className="font-bold text-white block mb-0.5">Como usar</span>
+            Preencha URL e chave e clique em <strong className="text-amber-200">Salvar e testar</strong>.
+            O teste dispara na hora: se passar, aparece <strong className="text-emerald-300">OK</strong> e{' '}
+            <strong className="text-white">Ver</strong>. Se falhar, o cartão mostra o que corrigir.
+            A Instrução SEI (minutas) continua no menu próprio.
           </div>
         </div>
 
         {error && (
-          <div role="alert" className="mb-4 rounded-xl border border-rose-500/30 bg-rose-950/30 p-3 text-xs text-rose-300">
+          <div role="alert" className="mb-4 rounded-xl border border-rose-400/40 bg-rose-950/40 p-3 text-sm text-rose-100">
             {error}
           </div>
         )}
 
-        <section className="mb-8 rounded-2xl border border-white/10 bg-slate-900/60 p-6">
-          <h2 className="text-sm font-bold text-white mb-3">URL da API sandbox</h2>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input
-              type="url"
-              value={sandboxUrl}
-              onChange={(e) => setSandboxUrl(e.target.value)}
-              placeholder="https://sandbox.seudominio/api"
-              disabled={!canEdit}
-              className="flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none disabled:opacity-60"
-            />
-            {canEdit && (
-              <button
-                type="button"
-                onClick={saveUrl}
-                disabled={busy === 'save'}
-                className="rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white border border-white/10 hover:bg-slate-700"
-              >
-                {busy === 'save' ? 'Salvando…' : 'Salvar URL'}
-              </button>
-            )}
-            {canEdit && (
-              <button
-                type="button"
-                onClick={() => runTests()}
-                disabled={Boolean(busy)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-600"
-              >
-                <Play className="h-4 w-4" />
-                {busy === 'all' ? 'Testando…' : 'Testar todas'}
-              </button>
-            )}
-          </div>
-        </section>
-
         {loading ? (
-          <p className="text-sm text-slate-500">Carregando checklist…</p>
+          <p className="text-sm text-slate-300">Carregando integrações…</p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <ChecklistGrupo title="Checks locais (Métrica)" items={locais} canEdit={canEdit} busy={busy} onTest={runTests} />
-            <ChecklistGrupo title="Checks sandbox (API externa)" items={sandbox} canEdit={canEdit} busy={busy} onTest={runTests} />
+          <div className="space-y-4">
+            {data?.items.map((item) => {
+              const draft = drafts[item.id] || { url: item.sandbox_url, key: '' };
+              const verAberto = verId === item.id;
+              return (
+                <article key={item.id} className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start gap-3">
+                      <StatusIcon status={item.status} />
+                      <div>
+                        <h2 className="text-base font-bold text-white">
+                          {item.nome}
+                          {item.obrigatorio && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-200">obrigatória</span>
+                          )}
+                        </h2>
+                        <p className="text-xs text-slate-300 mt-0.5">{item.descricao}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {item.status === 'ok' && (
+                        <button
+                          type="button"
+                          onClick={() => setVerId(verAberto ? null : item.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Ver
+                        </button>
+                      )}
+                      <span
+                        className={`rounded-md px-2 py-1 text-[11px] font-bold uppercase ${
+                          item.status === 'ok'
+                            ? 'bg-emerald-500 text-slate-950'
+                            : item.status === 'falha'
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-amber-400 text-slate-950'
+                        }`}
+                      >
+                        {item.status === 'ok' ? 'OK' : item.status === 'falha' ? 'Falhou' : 'Pendente'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {item.kind !== 'local' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      <label className="block text-xs font-semibold text-slate-200">
+                        URL sandbox
+                        <input
+                          type="url"
+                          value={draft.url}
+                          onChange={(e) =>
+                            setDrafts((prev) => ({ ...prev, [item.id]: { ...draft, url: e.target.value } }))
+                          }
+                          placeholder="https://sandbox.seudominio/api"
+                          disabled={!canEdit}
+                          className="mt-1 w-full rounded-xl border border-slate-500 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-400 focus:border-amber-400 focus:outline-none"
+                        />
+                      </label>
+                      <label className="block text-xs font-semibold text-slate-200">
+                        Chave de API {item.has_key && <span className="text-slate-400 font-normal">({item.api_key_masked})</span>}
+                        <input
+                          type="password"
+                          value={draft.key}
+                          onChange={(e) =>
+                            setDrafts((prev) => ({ ...prev, [item.id]: { ...draft, key: e.target.value } }))
+                          }
+                          placeholder={item.has_key ? 'Nova chave (opcional)' : 'Cole a chave do sandbox'}
+                          disabled={!canEdit}
+                          autoComplete="off"
+                          className="mt-1 w-full rounded-xl border border-slate-500 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder:text-slate-400 focus:border-amber-400 focus:outline-none"
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => saveAndTest(item.id)}
+                      disabled={busy === item.id}
+                      className="btn-salvar-integracao inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold disabled:opacity-60"
+                    >
+                      <Save className="h-4 w-4" />
+                      {busy === item.id ? 'Testando…' : item.kind === 'local' ? 'Testar agora' : 'Salvar e testar'}
+                    </button>
+                  )}
+
+                  {item.status === 'falha' && (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-400/40 bg-rose-950/40 p-3 text-sm text-rose-50">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">O que fazer</p>
+                        <p className="mt-1 text-rose-100">{item.detalhe || item.dica}</p>
+                      </div>
+                    </div>
+                  )}
+                  {item.status === 'aguardando' && item.detalhe && (
+                    <p className="mt-3 text-sm text-amber-200">{item.detalhe}</p>
+                  )}
+                  {item.status === 'ok' && item.detalhe && !verAberto && (
+                    <p className="mt-3 text-sm text-emerald-200">{item.detalhe}</p>
+                  )}
+                  {verAberto && (
+                    <pre className="mt-3 overflow-auto rounded-xl border border-emerald-500/30 bg-slate-950 p-3 text-[11px] text-emerald-100 whitespace-pre-wrap">
+                      {item.evidencia || item.detalhe || 'Sem corpo de resposta.'}
+                    </pre>
+                  )}
+                </article>
+              );
+            })}
           </div>
         )}
       </main>
     </div>
-  );
-}
-
-function ChecklistGrupo({
-  title,
-  items,
-  canEdit,
-  busy,
-  onTest,
-}: {
-  title: string;
-  items: CheckItem[];
-  canEdit: boolean;
-  busy: string | null;
-  onTest: (id: string) => void;
-}) {
-  return (
-    <section className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-      <h2 className="text-sm font-bold text-white mb-4">{title}</h2>
-      <ul className="space-y-2">
-        {items.map((item) => {
-          const checked = item.status === 'ok';
-          return (
-            <li
-              key={item.id}
-              className="flex items-start gap-3 rounded-xl border border-white/5 bg-slate-950/50 p-3"
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                readOnly
-                className="mt-1 h-4 w-4 accent-emerald-500"
-                aria-label={item.nome}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <StatusIcon status={item.status} />
-                  <span className="text-sm font-semibold text-white">{item.nome}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500">{statusLabel(item.status)}</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">{item.descricao}</p>
-                {item.detalhe && <p className="text-[11px] text-slate-500 mt-1 font-mono break-all">{item.detalhe}</p>}
-              </div>
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => onTest(item.id)}
-                  disabled={Boolean(busy)}
-                  className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-blue-200 hover:bg-white/5"
-                >
-                  {busy === item.id ? '…' : 'Testar'}
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }

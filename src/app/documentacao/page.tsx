@@ -281,7 +281,7 @@ export default function DocumentacaoPage() {
                     <span>Integração (`/integracao`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Painel-checklist para apontar a URL da API sandbox e testar cada canal (health, auth, SEI, folha/RH, unidades). Os checks locais validam o próprio Métrica. A Instrução SEI (`/relatorios-sei`) permanece o módulo de minutas e não é substituída por este checklist.
+                    Painel de conectores necessários para o SIGEP-Força operar: checks locais (API, unidades, entregas, esforços, ponderação, minutas) e canais externos com URL sandbox + chave de API (SEI, Folha/RH, organograma, SSO). Ao salvar a chave, o teste roda sozinho; sucesso mostra OK e Ver; falha indica o que corrigir. A Instrução SEI (`/relatorios-sei`) permanece o módulo de minutas.
                   </p>
                 </div>
               </div>
