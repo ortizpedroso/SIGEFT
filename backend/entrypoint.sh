@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+export PYTHONPATH="/app${PYTHONPATH:+:$PYTHONPATH}"
+cd /app
+
 echo "Running Alembic migrations..."
 alembic upgrade head
 

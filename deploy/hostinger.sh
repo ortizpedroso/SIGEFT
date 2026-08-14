@@ -31,6 +31,9 @@ fi
 
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 # O entrypoint da API já roda `alembic upgrade head` e `python -m app.core.init_db`.
+if docker inspect eventosbr-caddy-1 >/dev/null 2>&1; then
+  bash "$ROOT/deploy/hook-eventosbr-caddy.sh" || echo "Aviso: rode bash deploy/hook-eventosbr-caddy.sh"
+fi
 
 echo
 echo "Containers no ar. Próximo passo no servidor web existente:"

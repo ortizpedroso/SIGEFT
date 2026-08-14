@@ -1,0 +1,11 @@
+# Cole no Caddyfile do stack eventosbr (container eventosbr-caddy-1).
+# NÃO suba outro Caddy: esse já é dono de 80/443.
+# O Next da Métrica está em 127.0.0.1:3001 no host; no mesmo Docker
+# network o hostname é sigep-forca-web-1:3000.
+#
+# Depois: docker exec eventosbr-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+
+sigep.inovesw.com.br {
+	encode gzip zstd
+	reverse_proxy sigep-forca-web-1:3000
+}

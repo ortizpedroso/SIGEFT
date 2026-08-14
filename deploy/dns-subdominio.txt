@@ -39,12 +39,12 @@ NÃO use a aba "Subdomínios". Ela cria o hostname no plano compartilhado
    ./deploy/hostinger.sh
    O Next fica em 127.0.0.1:3001. eventosbr continua no ar.
 
-6. Vhost NOVO no servidor web da VPS (não edite o do eventosbr)
-   Nginx:  copie deploy/nginx-sigep.conf, nginx -t, reload
-           sudo certbot --nginx -d sigep.inovesw.com.br
-   Apache: copie deploy/apache-sigep.conf, a2ensite, reload
-           sudo certbot --apache -d sigep.inovesw.com.br
-   OLS:    deploy/openlitespeed-sigep.txt (Let's Encrypt no painel)
+6. Proxy HTTPS: o eventosbr já tem Caddy (eventosbr-caddy-1) em 80/443.
+   NÃO instale outro Caddy. Na VPS:
+     bash deploy/hook-eventosbr-caddy.sh
+   Isso liga sigep-forca-web-1 à rede do eventosbr e acrescenta
+   sigep.inovesw.com.br no Caddyfile existente (Let's Encrypt automático).
+   Snippet avulso: deploy/caddy-sigep-eventosbr.caddyfile
 
 7. Teste
    https://sigep.inovesw.com.br

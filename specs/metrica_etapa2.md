@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.23-dns
+**Versão:** 1.3.24-caddy
 **Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
@@ -120,7 +120,7 @@ Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os mód
   - `admin@tjrr.jus.br` (gestor) — senha via `ADMIN_PASSWORD` (default `Admin@2026!`)
   - `ti.executor@tjrr.jus.br` (executor)
   - `apoio@tjrr.jus.br` (apoio_exclusivo)
-- **Compose prod (VPS compartilhada):** `docker-compose.prod.yml` **sem** Caddy. Next `standalone` só em `127.0.0.1:3001`; API e Postgres só na rede interna. O site `www.eventosbr.app.br` permanece dono de 80/443. O hostname público pode ser um subdomínio de outro plano Hostinger (ex.: `sigep.inovesw.com.br` com registro A para o IP da VPS; não criar como site no hPanel). Guia: `deploy/dns-subdominio.txt`. Proxy via Nginx/Apache/OLS. Script `deploy/hostinger.sh`.
+- **Compose prod (VPS compartilhada):** `docker-compose.prod.yml` **sem** Caddy. Next `standalone` só em `127.0.0.1:3001`; API e Postgres só na rede interna. O Caddy já existente do eventosbr (`eventosbr-caddy-1`) permanece dono de 80/443. Hostname público: `sigep.inovesw.com.br` (DNS A no plano Hostinger). Hook: `deploy/hook-eventosbr-caddy.sh`. `PYTHONPATH=/app` no entrypoint Alembic.
 
 ---
 
@@ -229,3 +229,4 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 | 1.3.21-coexist | 2026-08-14 | Coexistência com `www.eventosbr.app.br`: remove Caddy de 80/443; Next só em `127.0.0.1:3001`; vhosts Nginx/Apache/OLS para `sigep.eventosbr.app.br`. |
 | 1.3.22-dns | 2026-08-14 | Hostname público via DNS A de outro plano Hostinger (`sigep.inovesw.com.br` → IP da VPS); `www.inovesw.com.br` permanece no plano compartilhado. `deploy/dns-subdominio.txt`. |
 | 1.3.23-dns | 2026-08-14 | TLD confirmado no hPanel: `inovesw.com.br`. Registro A na aba Registros DNS; não usar a aba Subdomínios nem o IP do plano compartilhado. |
+| 1.3.24-caddy | 2026-08-14 | Alembic `PYTHONPATH=/app` (corrige `No module named app`). Proxy via Caddy existente do eventosbr: `deploy/hook-eventosbr-caddy.sh`. |
