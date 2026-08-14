@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Unidade, Categoria } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage } from '@/lib/auth';
 import { Building2, Plus, Search, CheckCircle2, AlertCircle, Users, Scale, ArrowUpRight, ArrowDownRight, BarChart } from 'lucide-react';
 
 export default function UnidadesPage() {
@@ -62,7 +63,7 @@ export default function UnidadesPage() {
       setSubmitting(true);
       const res = await fetch('/api/unidades', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           nome: nome.trim(),
           tipo,
@@ -73,7 +74,7 @@ export default function UnidadesPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || 'Erro ao cadastrar unidade');
+        throw new Error(apiErrorMessage(err, 'Erro ao cadastrar unidade'));
       }
 
       setFormSuccess('Unidade cadastrada com sucesso!');

@@ -1,14 +1,16 @@
 from datetime import datetime, timedelta, timezone
+import os
 from typing import Optional
-from passlib.context import CryptContext
-from jose import JWTError, jwt
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 
-SECRET_KEY = "metrica-tjrr-super-secret-key-change-in-production"
+SECRET_KEY = os.getenv("SECRET_KEY", "metrica-tjrr-dev-only-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 8
 

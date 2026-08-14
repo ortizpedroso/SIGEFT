@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Entrega, Unidade } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage } from '@/lib/auth';
 import { Package, Plus, Search, CheckCircle2, Clock, BarChart, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function EntregasPage() {
@@ -66,7 +67,7 @@ export default function EntregasPage() {
     try {
       const res = await fetch('/api/entregas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           unidade_id: unidadeId,
           nome,
@@ -82,7 +83,7 @@ export default function EntregasPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || 'Falha ao cadastrar entrega');
+        throw new Error(apiErrorMessage(err, 'Falha ao cadastrar entrega'));
       }
 
       setFormSuccess('Entrega e Indicador de Capacidade cadastrados com sucesso!');

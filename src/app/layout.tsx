@@ -4,6 +4,16 @@ import { ThemeProvider } from '@/context/ThemeContext';
 export const metadata = {
   title: 'SIGEP-Força — TJRR',
   description: 'Sistema de Gestão do Dimensionamento da Força de Trabalho — TJRR (SUBGFT)',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 }
 
 export default function RootLayout({

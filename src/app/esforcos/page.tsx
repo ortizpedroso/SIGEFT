@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Esforco, Usuario, Entrega } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage } from '@/lib/auth';
 import { Users, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function EsforcosPage() {
@@ -71,7 +72,7 @@ export default function EsforcosPage() {
       setSubmitting(true);
       const res = await fetch('/api/esforcos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           usuario_id: usuarioId,
           entrega_id: entregaId,
@@ -82,7 +83,7 @@ export default function EsforcosPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || 'Erro ao registrar esforço');
+        throw new Error(apiErrorMessage(data, 'Erro ao registrar esforço'));
       }
 
       setFormSuccess('Esforço registrado com sucesso!');

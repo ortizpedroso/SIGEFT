@@ -1,16 +1,25 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import DashboardCharts from "@/components/DashboardCharts";
-import { dbStore } from "@/lib/db";
+import { getApiBase } from "@/lib/backend";
 import type { DashboardStats } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 async function fetchApiStatus(): Promise<string> {
-  return "online";
+  try {
+    const res = await fetch(`${getApiBase()}/`, { cache: "no-store" });
+    return res.ok ? "online" : "offline";
+  } catch {
+    return "offline";
+  }
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats | null> {
   try {
-    return dbStore.getDashboardStats();
+    const res = await fetch(`${getApiBase()}/api/dashboard/stats`, { cache: "no-store" });
+    if (!res.ok) return null;
+    return res.json();
   } catch {
     return null;
   }

@@ -1,6 +1,6 @@
 # Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
-Este repositório contém a implementação MVP da etapa 2 do projeto, com FastAPI no backend, Next.js no frontend, e PostgreSQL em container.
+Este repositório contém o MVP da etapa 2: FastAPI + PostgreSQL como fonte da verdade, Next.js como interface (BFF proxy para a API).
 
 ## Como rodar
 
@@ -13,19 +13,27 @@ Copy-Item .env.example .env
 2. Suba a stack com Docker Compose:
 
 ```powershell
-docker-compose up --build
+docker compose up --build
 ```
 
 3. Acesse:
 
 - Front-end: http://localhost:3001
 - Back-end: http://localhost:8001
+- API Docs: http://localhost:8001/docs
+
+Contas de seed (alterar senhas em produção):
+
+- `admin@tjrr.jus.br` / `Admin@2026!` (gestor)
+- `ti.executor@tjrr.jus.br` / `Executor@2026!` (executor)
+- `apoio@tjrr.jus.br` / `Apoio@2026!` (apoio exclusivo)
 
 ## O que está implementado
 
-- API FastAPI com validação Pydantic e banco PostgreSQL.
-- Modelos relacionais com UUID e integridade referencial.
-- Validação de esforços para não ultrapassar 100% por mês.
-- Bloqueio de perfil `apoio_exclusivo` em `/api/esforcos`.
-- Cálculo do Quartil 3 (`Q_3`) em `/api/simulacao/lotacao`.
-- Tailwind CSS no frontend e meta `noindex, nofollow`.
+- API FastAPI com validação Pydantic e PostgreSQL relacional (UUID + FKs).
+- Next.js consome a API via rotas BFF em `src/app/api/*` (sem store em memória).
+- JWT real (8h) no login; escritas exigem `Authorization: Bearer`.
+- Trava de esforços em 100% no mês (HTTP 400) e bloqueio de `apoio_exclusivo` (HTTP 403).
+- Q₃ com NumPy e fallback de mediana se redução > 30%.
+- Módulos de entregas/capacidade, ponderação, pareceres SEI e dashboard CNJ 219/2016.
+- Meta `noindex, nofollow` e tema claro/escuro.

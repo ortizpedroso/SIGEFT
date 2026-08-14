@@ -1,8 +1,8 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica_etapa2.md`
-**Versão:** 1.3.16-review
-**Data:** 2026-08-11
+**Versão:** 1.3.18-fusion
+**Data:** 2026-08-14
 **Comandos:** `/build` lê e implementa; `/review` compara e valida lacunas contra este arquivo.
 
 ---
@@ -10,6 +10,8 @@
 ## Objetivo da Versão
 
 Entregar o MVP de média fidelidade (Etapa 2) focado na integração do modelo qualitativo/quantitativo do MGI com os gatilhos estatísticos da Resolução CNJ nº 219/2016. A aplicação operará em contêineres, com back-end automatizado e painéis de usabilidade limpa para as unidades de apoio do Tribunal.
+
+A versão **1.3.18-fusion** unifica a arquitetura: FastAPI + PostgreSQL é a única fonte da verdade; o Next.js é interface e BFF (proxy), sem store em memória.
 
 ---
 
@@ -21,11 +23,36 @@ O fluxo exigido é: **`/build` ➔ `/review` ➔ atualização da spec**. O cód
 
 ---
 
+## 0. Diagnóstico e Estratégia de Fusão (1.3.18)
+
+### Problema encontrado
+
+O repositório tinha **duas aplicações paralelas**:
+
+1. FastAPI + PostgreSQL (regras 400/403, Q₃, JWT, Alembic) — pouco usado pela UI.
+2. Next.js com `src/lib/db.ts` em memória — era o que o dashboard e os módulos realmente usavam.
+
+Efeitos: Compose apontava para `./frontend` inexistente; login gerava JWT fake; senhas em texto plano no front; `get_current_user` existia e não protegia POSTs; meta `noindex` marcada no DoD sem estar no `layout.tsx`; CORS documentado e não injetado; DoD falava em 5 tabelas (são 6+).
+
+### Estratégia escolhida
+
+**Fusão com FastAPI como backend canônico**, não descarte do front rico.
+
+- O domínio extra (capacidade produtiva, ponderação, parecer SEI, gráficos do dashboard) foi promovido ao FastAPI/PostgreSQL.
+- As rotas `src/app/api/*` viraram BFF: apenas encaminham para a API.
+- O login passou a emitir JWT real; POSTs exigem Bearer.
+- Docker, seed, spec e DoD foram alinhados a essa arquitetura.
+
+Descartar o FastAPI quebraria a spec (API-first + PostgreSQL). Descartar os módulos Next quebraria o produto visível. A fusão conserva os dois papéis.
+
+---
+
 ## 1. Diretrizes de Atuação (Desenvolvedor e Analista Sênior)
 
-- **Automação e Scaffolding:** Criar arquivos em `./` sem subpasta raiz extra.
+- **Automação e Scaffolding:** Criar arquivos em `./` sem subpasta raiz extra. Front em `src/` (não em `frontend/`).
 - **Compatibilidade Windows:** Scripts de scaffolding em PowerShell (.ps1) obrigatoriamente.
 - **Adesão Estrita:** Proibido codificar funcionalidade não definida nesta spec.
+- **Fonte da verdade:** persistência e regras de negócio somente no FastAPI/PostgreSQL.
 - **Sugestão de Melhorias:** Apenas sugerir; implementar só com aceite explícito.
 
 ---
@@ -34,7 +61,8 @@ O fluxo exigido é: **`/build` ➔ `/review` ➔ atualização da spec**. O cód
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Front-end | Next.js (App Router), React, TypeScript, Tailwind CSS, Lucide Icons |
+| Front-end | Next.js (App Router), React, TypeScript, Tailwind CSS, Lucide Icons, Recharts |
+| BFF | Rotas `src/app/api/*` fazendo proxy para o FastAPI (`API_URL`) |
 | Back-end | Python com FastAPI (API-first, validação via Pydantic) |
 | Banco de Dados | PostgreSQL (esquema estritamente relacional) |
 | Infraestrutura | Docker e Docker Compose |
@@ -46,6 +74,9 @@ O fluxo exigido é: **`/build` ➔ `/review` ➔ atualização da spec**. O cód
 ```
 ./
 ├── docker-compose.yml
+├── docker-compose.prod.yml
+├── Dockerfile                 # imagem Next.js (contexto da raiz)
+├── next.config.js
 ├── README.md
 ├── setup_project.ps1
 ├── .env / .env.example
@@ -53,38 +84,59 @@ O fluxo exigido é: **`/build` ➔ `/review` ➔ atualização da spec**. O cód
 ├── backend/
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── entrypoint.sh
+│   ├── entrypoint.sh          # alembic upgrade + seed + uvicorn
 │   ├── alembic.ini
 │   ├── alembic/env.py
 │   ├── alembic/versions/0001_create_schema.py
+│   ├── alembic/versions/0002_fusion_domain.py
 │   └── app/
 │       ├── main.py
 │       ├── database.py
 │       ├── models.py
 │       ├── schemas.py
-│       ├── core/__init__.py
-│       ├── core/security.py
-│       ├── core/init_db.py
-│       └── routers/ (__init__, auth, unidades, esforcos, simulacao)
+│       ├── core/ (__init__, security, init_db)
+│       ├── services/dimensionamento.py
+│       └── routers/ (auth, unidades, esforcos, simulacao, dashboard,
+│                     categorias, usuarios, entregas, ponderacao, relatorios_sei)
 └── src/
-    └── app/ (layout.tsx, page.tsx, globals.css)
+    ├── app/ (layout, page, login, unidades, entregas, esforcos,
+    │         ponderacao, simulacao, relatorios-sei, documentacao, api/*)
+    ├── components/ (Navbar, DashboardCharts)
+    ├── context/ThemeContext.tsx
+    ├── lib/ (backend.ts, auth.ts)
+    └── types/index.ts
 ```
 
 ---
 
 ## 4. Automações e Rotinas de Inicialização
 
-- **Migrações Alembic** ao subir o contêiner.
-- **Seed Parâmetros Globais:** ITP = 70% | Teto Apoio Indireto = 30%.
+- **Migrações Alembic** no `entrypoint.sh` do contêiner da API (`upgrade head`), inclusive `0002_fusion_domain`.
+- **Seed Parâmetros Globais:** ITP = 70% | Teto Apoio Indireto = 30% | pesos de ponderação (0.40 / 0.35 / 0.25) | tolerância de desvio 20%.
 - **Seed Categorias:** 7 categorias transversais MGI.
-- **Seed Super Admin:** admin@tjrr.jus.br, perfil gestor.
+- **Seed Unidades, Entregas, Esforços e Parecer SEI** de demonstração.
+- **Seed usuários:**
+  - `admin@tjrr.jus.br` (gestor) — senha via `ADMIN_PASSWORD` (default `Admin@2026!`)
+  - `ti.executor@tjrr.jus.br` (executor)
+  - `apoio@tjrr.jus.br` (apoio_exclusivo)
+- **Compose:** `api` depende de `db` healthy; injeta `DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`, `ADMIN_*`. `web` usa `API_URL=http://api:8000`.
 
 ---
 
 ## 5. Modelo de Dados Relacional
 
-Tabelas: `categorias`, `parametros`, `unidades`, `usuarios`, `entregas`, `esforcos`.
-UUID como PK. snake_case. Integridade referencial com FK.
+Tabelas: `categorias`, `parametros`, `unidades`, `usuarios`, `entregas`, `esforcos`, `pareceres_sei`.
+UUID como PK (string). snake_case. Integridade referencial com FK.
+
+`entregas` inclui campos de capacidade: `carga_horaria_media`, `volume_mensal`, `complexidade`, `criticidade`, `absenteismo_pct`, `rotatividade_pct`, `capacidade_produtiva`.
+
+`parametros` também guarda o motor de ponderação (`PESO_VOLUME`, `PESO_COMPLEXIDADE`, `PESO_CRITICIDADE`, `TOLERANCIA_DESVIO`).
+
+Lotação ideal da unidade é **calculada** (não persistida):  
+`servidores_atuais` = n. de usuários da unidade, ou 4 (indireto) / 6 (direto) se não houver usuários;  
+`lotacao_ideal = round((IPS/80) * 3 * (1 + n_entregas * 0.25))`.
+
+Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 
 ---
 
@@ -93,37 +145,46 @@ UUID como PK. snake_case. Integridade referencial com FK.
 - **POST /api/esforcos:** Rejeita com HTTP 400 se soma > 100% no mês.
 - **POST /api/esforcos:** Rejeita com HTTP 403 se perfil_dft = apoio_exclusivo.
 - **POST /api/simulacao/lotacao:** Q3 via numpy.percentile(75); fallback Mediana se reducao_percentual > 30%.
+- **GET /api/dashboard/stats:** `pct_esforco_indireto` no mês corrente; `alerta_cnj` se > 30%. Inclui séries para gráficos.
+- **GET /api/unidades:** enriquece com `servidores_atuais`, `lotacao_ideal`, `balanco`, `status_dimensionamento`.
+- **POST /api/entregas:** calcula `capacidade_produtiva`.
+- **GET/POST /api/ponderacao:** lê/grava pesos em `parametros`.
+- **GET/POST /api/relatorios-sei:** gera minuta SEI a partir do dimensionamento da unidade.
+- **POST /api/token** + **GET /api/me:** JWT 8h. Todos os POST (exceto `/token`) exigem `get_current_user`.
+- **SECRET_KEY** e senha do admin vêm de variáveis de ambiente.
 
 ---
 
 ## 7. UI, UX, SEO, Temas e Segurança
 
-- Tailwind CSS com suporte a paleta de cores corporativa executiva e judiciária. Grid: 1 col mobile / 4 col desktop.
-- **Modo Claro / Modo Escuro (Light & Dark Mode):** Suporte nativo via `ThemeContext` e botão toggle no `Navbar.tsx` com persistência em `localStorage` (`sigep_theme`).
-- **Resiliência e Hidratação:** Proteção de montagem no cliente para Recharts (`mounted` state) e flag `suppressHydrationWarning` no HTML/body.
-- meta noindex, nofollow em todas as páginas.
+- Tailwind CSS com paleta corporativa executiva e judiciária. Grid: 1 col mobile / 4 col desktop.
+- **Modo Claro / Modo Escuro:** `ThemeContext` e toggle no `Navbar.tsx` com persistência em `localStorage` (`sigep_theme`).
+- **Resiliência e Hidratação:** proteção `mounted` nos Recharts e `suppressHydrationWarning` no HTML/body.
+- meta `robots: noindex, nofollow` em todas as páginas (`layout.tsx`).
 - bcrypt + JWT (8h). XSS protegido pelo React/Next.js.
+- Login real via `/api/token` (BFF → FastAPI). Token em `localStorage` (`metrica_token`); POSTs enviam `Authorization: Bearer`.
 - Alerta de cor dinâmica: Apoio Indireto > 30% → vermelho; ≤ 30% → verde.
+- Página oculta `/documentacao`.
 
 ---
 
 ## 8. Definition of Done (DoD)
 
-- [x] Estrutura de diretórios em ./ sem subpasta extra.
-- [x] docker-compose.yml com POSTGRES_USER/PASSWORD/DB corretos + healthcheck.
-- [x] models.py com todas as 5 tabelas mapeadas (UUID PK, snake_case).
+- [x] Estrutura de diretórios em ./ sem subpasta extra (`src/` na raiz, não `frontend/`).
+- [x] docker-compose.yml com POSTGRES_USER/PASSWORD/DB, healthcheck, CORS_ORIGINS, SECRET_KEY e build do Next a partir da raiz.
+- [x] models.py com as 7 tabelas mapeadas (UUID PK, snake_case), inclusive `pareceres_sei` e campos de capacidade em `entregas`.
 - [x] HTTP 400 na trava de 100% de esforço.
 - [x] HTTP 403 para apoio_exclusivo.
 - [x] Q3 com numpy + fallback Mediana automático.
-- [x] core/security.py: bcrypt, JWT, get_current_user.
-- [x] core/init_db.py: seed ITP=70%, teto=30%, 7 categorias, Super Admin.
-- [x] Alembic migração 0001 cobrindo todas as tabelas.
+- [x] core/security.py: bcrypt, JWT via SECRET_KEY de ambiente, get_current_user aplicado nos POSTs.
+- [x] core/init_db.py: seed ITP=70%, teto=30%, ponderação, 7 categorias, unidades/entregas demo, Super Admin e perfis.
+- [x] Alembic 0001 + 0002 cobrindo o esquema unificado.
 - [x] pydantic[email] e python-multipart no requirements.txt.
 - [x] meta noindex/nofollow no layout.tsx.
-- [x] Alerta de cor dinâmica na UI React.
-- [x] Alternância de Modo Claro / Escuro com ThemeContext, persistência local e paleta de cores coerente.
-- [x] Prevenção de divergência de hidratação SSR/CSR nos gráficos de indicadores.
-- [x] Nenhuma feature extra implementada.
+- [x] Alerta de cor dinâmica na UI React via GET /api/dashboard/stats.
+- [x] Alternância Claro/Escuro com ThemeContext.
+- [x] UI não usa store em memória; BFF proxy para FastAPI.
+- [x] Nenhuma segunda fonte de verdade de dados.
 
 ---
 
@@ -148,4 +209,4 @@ UUID como PK. snake_case. Integridade referencial com FK.
 | 1.3.15-review | 2026-08-08 | Adequação da identidade visual do topo (`Navbar.tsx`) para o Azul Escuro Institucional do TJRR (`#0b1736`), distanciamento e divisor visual entre os links de navegação e o botão de alternância Claro/Escuro, e aprimoramento completo do contraste de texto e cartões de resultado da análise no Modo Claro na página de Simulação Q₃/Mediana (`simulacao/page.tsx` e `globals.css`). |
 | 1.3.16-review | 2026-08-11 | Criação da página oculta de documentação completa do sistema (`/documentacao`): detalhamento de todos os módulos operacionais, fundamentação jurídica (CNJ 219/2016 e MGI/UnB), tabela analítica de equações matemáticas (Lotação Ideal, Balanço, Teto CNJ 30%, Capacidade Produtiva, Ponderação Multidimensional, Q₃ Benchmark, Mediana Fallback e Trava 100%), exemplos numéricos passo a passo e dicionário de dados. |
 | 1.3.17-review | 2026-08-11 | Ajuste de justificativa do texto (`text-justify`) em todas as seções descritivas da página `/documentacao` e aprimoramento do contraste da seção "5. Exemplos Práticos de Cálculo Passo a Passo", utilizando cartões internos escuros (`bg-slate-900/90`), texto de alto contraste (`text-slate-100`/`text-slate-200`) e bordas temáticas de destaque em Azul, Âmbar e Rosa alinhadas ao sistema. |
-
+| 1.3.18-fusion | 2026-08-14 | Fusão arquitetural: FastAPI+PostgreSQL única fonte da verdade; Next.js BFF sem `db.ts`; domínio de capacidade/ponderação/SEI promovido ao backend; JWT real nos POSTs; Compose aponta para `src/` na raiz; Alembic 0002; spec/DoD alinhados ao código. |

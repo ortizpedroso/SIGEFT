@@ -31,11 +31,13 @@ if (-not (Test-Path ".\.env")) {
 # ---------------------------------------------------------------------------
 $dirs = @(
     "specs",
+    "src\app",
+    "src\components",
+    "src\lib",
     "backend\app\core",
     "backend\app\routers",
-    "backend\alembic\versions",
-    "frontend\src\app",
-    "frontend\src\components"
+    "backend\app\services",
+    "backend\alembic\versions"
 )
 foreach ($dir in $dirs) {
     New-Item -ItemType Directory -Force -Path ".\$dir" | Out-Null

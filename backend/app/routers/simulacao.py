@@ -3,13 +3,19 @@ from sqlalchemy.orm import Session
 import numpy as np
 
 from app.database import get_db
-from app.models import Unidade
+from app.models import Unidade, Usuario
 from app.schemas import LotacaoRequest, SimulacaoOut
+from app.core.security import get_current_user
 
 router = APIRouter()
 
+
 @router.post("/simulacao/lotacao", response_model=SimulacaoOut)
-def calcular_lotacao(req: LotacaoRequest, db: Session = Depends(get_db)):
+def calcular_lotacao(
+    req: LotacaoRequest,
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(get_current_user),
+):
     unidades = db.query(Unidade).filter(Unidade.categoria_id == req.categoria_id).all()
     if not unidades:
         raise HTTPException(status_code=404, detail="Categoria sem unidades cadastradas")

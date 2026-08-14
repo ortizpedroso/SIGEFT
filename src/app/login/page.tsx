@@ -50,20 +50,32 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      // Verify or simulate authentication token
-      const accountMatch = predefinedAccounts.find((a) => a.email === email) || {
-        email,
-        perfil: 'gestor',
-      };
+      const form = new URLSearchParams();
+      form.set('username', email);
+      form.set('password', senha);
+      const res = await fetch('/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        throw new Error(payload.detail || 'Credenciais inválidas');
+      }
 
-      // Save user session
-      const mockToken = `jwt-token-${Date.now()}`;
-      localStorage.setItem('metrica_token', mockToken);
+      localStorage.setItem('metrica_token', payload.access_token);
+
+      const meRes = await fetch('/api/me', {
+        headers: { Authorization: `Bearer ${payload.access_token}` },
+      });
+      const me = meRes.ok ? await meRes.json() : { email, perfil_dft: 'gestor' };
+
       localStorage.setItem(
         'metrica_user',
         JSON.stringify({
-          email: accountMatch.email,
-          perfil_dft: accountMatch.perfil,
+          email: me.email,
+          perfil_dft: me.perfil_dft,
+          unidade_nome: me.unidade_nome,
         })
       );
 
@@ -71,8 +83,9 @@ export default function LoginPage() {
       setTimeout(() => {
         router.push('/');
       }, 800);
-    } catch {
-      setError('Erro ao efetuar login. Verifique suas credenciais.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao efetuar login. Verifique suas credenciais.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

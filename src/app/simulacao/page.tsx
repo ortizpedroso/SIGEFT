@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Categoria, SimulacaoResponse } from '@/types';
+import { jsonAuthHeaders, apiErrorMessage } from '@/lib/auth';
 import { BarChart3, Calculator, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export default function SimulacaoPage() {
@@ -39,7 +40,7 @@ export default function SimulacaoPage() {
       setLoading(true);
       const res = await fetch('/api/simulacao/lotacao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           categoria_id: categoriaId,
           reducao_percentual: Number(reducaoPercentual),
@@ -48,7 +49,7 @@ export default function SimulacaoPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || 'Erro ao realizar simulação');
+        throw new Error(apiErrorMessage(data, 'Erro ao realizar simulação'));
       }
 
       setResult(data);

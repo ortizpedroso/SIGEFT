@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { ParecerSEI, Unidade } from '@/types';
+import { jsonAuthHeaders } from '@/lib/auth';
 import { FileText, Plus, Copy, Check, Printer, AlertCircle, Building2, ShieldCheck } from 'lucide-react';
 
 export default function RelatoriosSEIPage() {
@@ -51,7 +52,7 @@ export default function RelatoriosSEIPage() {
     try {
       const res = await fetch('/api/relatorios-sei', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           unidadeId,
           numeroProcessoSEI: processoSEI,

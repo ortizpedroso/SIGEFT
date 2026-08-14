@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Unidade, MotorPonderacaoConfig } from '@/types';
+import { jsonAuthHeaders } from '@/lib/auth';
 import { Sliders, RefreshCw, CheckCircle2, ShieldAlert, Scale, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function PonderacaoPage() {
@@ -50,7 +51,7 @@ export default function PonderacaoPage() {
     try {
       const res = await fetch('/api/ponderacao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(config),
       });
       if (res.ok) {

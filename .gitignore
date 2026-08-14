@@ -6,11 +6,14 @@
 .env.production.local
 
 # Dependências do Node.js
+/node_modules
 /frontend/node_modules
 /.pnp
 .pnp.js
 
 # Build do Next.js
+/.next/
+/out/
 /frontend/.next/
 /frontend/out/
 
@@ -22,6 +25,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+backend/.pytest_cache/
 
 # Ambientes virtuais do Python
 /backend/venv
