@@ -8,7 +8,7 @@ cd "$ROOT"
 
 if [[ ! -f .env.production ]]; then
   echo "Crie .env.production a partir de .env.production.example"
-  echo "  CORS_ORIGINS=https://sigep.inovesw.cm.br  (hostname cujo A aponta para esta VPS)"
+  echo "  CORS_ORIGINS=https://sigep.inovesw.com.br  (hostname cujo A aponta para esta VPS)"
   echo "  COOKIE_SECURE=true"
   echo "  SECRET_KEY com 32+ caracteres aleatórios"
   exit 1
@@ -40,19 +40,19 @@ if command -v nginx >/dev/null 2>&1 || [[ -d /etc/nginx ]]; then
   echo "  sudo cp deploy/nginx-sigep.conf /etc/nginx/sites-available/sigep"
   echo "  sudo ln -sf /etc/nginx/sites-available/sigep /etc/nginx/sites-enabled/sigep"
   echo "  sudo nginx -t && sudo systemctl reload nginx"
-  echo "  sudo certbot --nginx -d sigep.inovesw.cm.br   # ou o hostname do seu DNS"
+  echo "  sudo certbot --nginx -d sigep.inovesw.com.br   # ou o hostname do seu DNS"
 elif command -v apache2 >/dev/null 2>&1 || [[ -d /etc/apache2 ]]; then
   echo "  Apache detectado → copie deploy/apache-sigep.conf"
   echo "  sudo a2enmod proxy proxy_http headers ssl rewrite"
   echo "  sudo cp deploy/apache-sigep.conf /etc/apache2/sites-available/sigep.conf"
   echo "  sudo a2ensite sigep"
   echo "  sudo apache2ctl configtest && sudo systemctl reload apache2"
-  echo "  sudo certbot --apache -d sigep.inovesw.cm.br   # ou o hostname do seu DNS"
+  echo "  sudo certbot --apache -d sigep.inovesw.com.br   # ou o hostname do seu DNS"
 else
   echo "  Não detectei Nginx/Apache. Se for OpenLiteSpeed (padrão Hostinger):"
   echo "  siga deploy/openlitespeed-sigep.txt — vhost novo, proxy 127.0.0.1:3001"
 fi
 echo
-echo "DNS: A  sigep.inovesw.cm.br  →  IP desta VPS (zona DNS do plano Hostinger, não criar como site)."
+echo "DNS: A  sigep.inovesw.com.br  →  IP desta VPS (zona DNS do plano Hostinger, não criar como site)."
 echo "     ver deploy/dns-subdominio.txt"
-echo "Não altere o vhost de www.eventosbr.app.br nem o site www.inovesw.cm.br."
+echo "Não altere o vhost de www.eventosbr.app.br nem o site www.inovesw.com.br."

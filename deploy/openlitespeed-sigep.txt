@@ -2,17 +2,17 @@ OpenLiteSpeed (painel Hostinger / CyberPanel) — proxy da Métrica
 sem tocar no vhost de www.eventosbr.app.br.
 
 Hostname = o A que aponta para o IP da VPS, por exemplo
-sigep.inovesw.cm.br (DNS do plano Hostinger; NÃO criar como site no hPanel).
+sigep.inovesw.com.br (DNS do plano Hostinger; NÃO criar como site no hPanel).
 Ver deploy/dns-subdominio.txt
 
-1. DNS: A  sigep.inovesw.cm.br  →  IP público da VPS
+1. DNS: A  sigep.inovesw.com.br  →  IP público da VPS
 2. Painel OLS → Virtual Hosts → Add:
-   - Domain: sigep.inovesw.cm.br
+   - Domain: sigep.inovesw.com.br
    - Não reutilize o vhost do eventosbr.
 3. Context / External App:
    - Type: Proxy
    - Address: 127.0.0.1:3001
    - URI: /
-4. SSL: Let's Encrypt no painel para sigep.inovesw.cm.br
+4. SSL: Let's Encrypt no painel para sigep.inovesw.com.br
 5. Confirme que o listener 443 do OLS continua servindo o eventosbr
    (só adiciona o novo domínio no mesmo listener, vhost separado).

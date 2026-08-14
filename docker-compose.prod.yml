@@ -31,8 +31,8 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-metrica}:${DB_PASSWORD}@db:5432/${DB_NAME:-metrica}
       SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY com 32+ caracteres}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://sigep.inovesw.cm.br}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-sigep.inovesw.cm.br,api,localhost,127.0.0.1}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://sigep.inovesw.com.br}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-sigep.inovesw.com.br,api,localhost,127.0.0.1}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tjrr.jus.br}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD}
       ENV: production
