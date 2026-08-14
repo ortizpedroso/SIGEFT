@@ -173,7 +173,7 @@ Capacidade produtiva: `(CH / max(0.5, 1 - (abs+rot)/100)) * volume`.
 - Login real via `/api/token`. `localStorage` guarda só perfil de UI (`metrica_user`). Logout em `/api/logout` apaga o cookie.
 - Middleware Next: rotas de página exigem cookie; sem sessão redireciona para `/login`.
 - Alerta de cor dinâmica: Apoio Indireto > 30% → vermelho; ≤ 30% → verde.
-- Página oculta `/documentacao` (autenticada).
+- Página oculta `/documentacao` (autenticada). O banner de topo (`.doc-hero`) trava contraste: navy + texto branco no escuro; cartão branco + título `#0b1736` e lead `#1e293b` no claro.
 - Acessibilidade: skip-link, `lang=pt-BR`, `focus-visible`, `aria-label`/`aria-expanded` no menu, `aria-modal` nos diálogos, Escape fecha modal, `autocomplete` no login.
 - UX de perfil: botões de escrita ocultos para quem não tem permissão; módulo Esforços no Navbar.
 - **Integração** (`/integracao`): campo de **URL da API** + **chave**; **Salvar** dispara a verificação. Item **OK** (verde) ou **Problema** (vermelho com o texto do erro). **Instrução SEI** (`/relatorios-sei`) permanece o módulo de minutas.
