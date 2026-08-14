@@ -281,7 +281,7 @@ export default function DocumentacaoPage() {
                     <span>Integração (`/integracao`)</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                    Painel dos canais de governança: SEI TJRR (encaminha à Instrução SEI), cadastro local de unidades/quantitativo e enquadramento normativo MGI/CNJ 219. Não substitui o módulo de minutas e não envia processo automaticamente ao SEI neste MVP.
+                    Painel-checklist para apontar a URL da API sandbox e testar cada canal (health, auth, SEI, folha/RH, unidades). Os checks locais validam o próprio Métrica. A Instrução SEI (`/relatorios-sei`) permanece o módulo de minutas e não é substituída por este checklist.
                   </p>
                 </div>
               </div>

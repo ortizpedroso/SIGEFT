@@ -54,6 +54,22 @@ class Unidade(Base):
     pareceres = relationship("ParecerSEI", back_populates="unidade")
 
 
+class ConfigTexto(Base):
+    __tablename__ = "config_texto"
+
+    chave = Column(String, primary_key=True)
+    valor = Column(Text, nullable=False)
+
+
+class IntegracaoCheck(Base):
+    __tablename__ = "integracao_checks"
+
+    id = Column(String, primary_key=True)
+    status = Column(String, nullable=False, default="pendente")
+    detalhe = Column(Text, nullable=True)
+    testado_em = Column(String, nullable=True)
+
+
 class Usuario(Base):
     __tablename__ = "usuarios"
 

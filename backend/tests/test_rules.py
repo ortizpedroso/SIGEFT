@@ -213,3 +213,41 @@ def test_login_invalido_nao_revela_usuario(client: TestClient):
 def test_capacidade_produtiva_formula():
     # CH=10, abs=10, rot=10 => fator 0.8 => (10/0.8)*100 = 1250
     assert capacidade_produtiva(10, 100, 10, 10) == 1250
+
+
+def test_integracao_checklist_local_e_sandbox_aguardando(client: TestClient, db: Session):
+    cat = Categoria(nome="Cat Integracao", ips=80)
+    db.add(cat)
+    db.flush()
+    uni = Unidade(nome="Uni Integracao", tipo=TipoUnidadeEnum.apoio_indireto, categoria_id=cat.id, ips=80)
+    db.add(uni)
+    db.flush()
+    gestor = Usuario(
+        email="int.gestor@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.gestor,
+        unidade_id=uni.id,
+    )
+    db.add(gestor)
+    db.commit()
+
+    headers = _auth_header(gestor.id)
+    listed = client.get("/api/integracao", headers=headers)
+    assert listed.status_code == 200
+    body = listed.json()
+    assert body["resumo"]["total"] >= 10
+    ids = {item["id"] for item in body["items"]}
+    assert "sandbox_sei" in ids
+    assert "local_unidades" in ids
+
+    tested = client.post("/api/integracao/testar", headers=headers, json={})
+    assert tested.status_code == 200
+    after = tested.json()
+    by_id = {item["id"]: item for item in after["items"]}
+    assert by_id["metrica_health"]["status"] == "ok"
+    assert by_id["local_unidades"]["status"] == "ok"
+    assert by_id["sandbox_sei"]["status"] == "aguardando"
+
+    bad = client.post("/api/integracao", headers=headers, json={"sandbox_url": "javascript:alert(1)"})
+    assert bad.status_code == 400
+
