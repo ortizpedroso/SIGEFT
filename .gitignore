@@ -17,6 +17,9 @@
 /frontend/.next/
 /frontend/out/
 
+# Banco SQLite local do backend
+/backend/test.db
+
 # Arquivos de cache e de sistema do Python
 __pycache__/
 *.pyc

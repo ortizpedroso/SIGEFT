@@ -1,0 +1,20 @@
+{
+  "name": "SIGEP-Força (Métrica TJRR)",
+  "install": "./.cursor/install.sh",
+  "terminals": [
+    {
+      "name": "frontend",
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; bun run dev",
+      "description": "Next.js dev server (self-contained app + /api routes) on http://localhost:3000"
+    },
+    {
+      "name": "backend",
+      "command": "cd backend && .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+      "description": "FastAPI backend (SQLite) on http://localhost:8000 — docs at /docs"
+    }
+  ],
+  "ports": [
+    { "name": "frontend", "port": 3000 },
+    { "name": "backend", "port": 8000 }
+  ]
+}
