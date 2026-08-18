@@ -21,6 +21,12 @@ class PerfilDFTEnum(str, enum.Enum):
     apoio_exclusivo = "apoio_exclusivo"
 
 
+class VinculoServidorEnum(str, enum.Enum):
+    efetivo = "efetivo"
+    cargo_comissionado = "cargo_comissionado"
+    funcao_confianca = "funcao_confianca"
+
+
 class Categoria(Base):
     __tablename__ = "categorias"
 
@@ -51,6 +57,7 @@ class Unidade(Base):
     categoria = relationship("Categoria", back_populates="unidades")
     usuarios = relationship("Usuario", back_populates="unidade")
     entregas = relationship("Entrega", back_populates="unidade")
+    servidores = relationship("Servidor", back_populates="unidade")
     pareceres = relationship("ParecerSEI", back_populates="unidade")
 
 
@@ -144,5 +151,32 @@ class SimulacaoLog(Base):
     payload_entrada = Column(Text, nullable=False)
     payload_resultado = Column(Text, nullable=False)
     criado_em = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    usuario = relationship("Usuario")
+
+
+class Servidor(Base):
+    __tablename__ = "servidores"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    matricula = Column(String, nullable=False, unique=True)
+    nome = Column(String, nullable=False)
+    unidade_id = Column(String, ForeignKey("unidades.id"), nullable=True)
+    vinculo = Column(Enum(VinculoServidorEnum), nullable=False)
+    cargo_nome = Column(String, nullable=True)
+    sincronizado_em = Column(DateTime(timezone=True), nullable=False)
+
+    unidade = relationship("Unidade", back_populates="servidores")
+
+
+class ParametroLog(Base):
+    __tablename__ = "parametros_log"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    usuario_id = Column(String, ForeignKey("usuarios.id"), nullable=False)
+    chave = Column(String, nullable=False)
+    valor_anterior = Column(Float, nullable=False)
+    valor_novo = Column(Float, nullable=False)
+    alterado_em = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     usuario = relationship("Usuario")

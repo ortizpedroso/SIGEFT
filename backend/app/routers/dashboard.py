@@ -28,6 +28,7 @@ def get_dashboard_stats(db: Session = Depends(get_db), _user: Usuario = Depends(
             joinedload(Unidade.categoria),
             joinedload(Unidade.usuarios),
             joinedload(Unidade.entregas),
+            joinedload(Unidade.servidores),
         )
         .all()
     )
@@ -140,6 +141,7 @@ def get_rateio_indireto(db: Session = Depends(get_db), _user: Usuario = Depends(
             joinedload(Unidade.categoria),
             joinedload(Unidade.usuarios),
             joinedload(Unidade.entregas),
+            joinedload(Unidade.servidores),
         )
         .all()
     )

@@ -34,6 +34,13 @@ class UnidadeCreate(UnidadeBase):
     pass
 
 
+class ComposicaoVinculoOut(BaseModel):
+    sincronizado: bool
+    efetivo: int = 0
+    cargo_comissionado: int = 0
+    funcao_confianca: int = 0
+
+
 class UnidadeOut(UnidadeBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -43,6 +50,7 @@ class UnidadeOut(UnidadeBase):
     lotacao_ideal: Optional[int] = None
     balanco: Optional[int] = None
     status_dimensionamento: Optional[str] = None
+    composicao_vinculo: Optional[ComposicaoVinculoOut] = None
 
 
 class UsuarioBase(BaseModel):
@@ -250,6 +258,22 @@ class MotorPonderacao(BaseModel):
     pesoComplexidade: float = Field(default=0.35, ge=0, le=1)
     pesoCriticidade: float = Field(default=0.25, ge=0, le=1)
     toleranciaDesvio: float = Field(default=20.0, ge=0, le=100)
+
+
+class ParametroHistoricoItem(BaseModel):
+    id: str
+    chave: str
+    valor_anterior: float
+    valor_novo: float
+    alterado_em: str
+    usuario_email: str
+
+
+class ParametroHistoricoOut(BaseModel):
+    items: List[ParametroHistoricoItem]
+    total: int
+    page: int
+    page_size: int
 
 
 class ParecerSEICreate(BaseModel):

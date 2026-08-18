@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import json
 import os
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -17,12 +17,16 @@ from app.models import (
     IntegracaoCheck,
     Parametro,
     ParecerSEI,
+    Servidor,
     Unidade,
     Usuario,
+    VinculoServidorEnum,
 )
 from app.core.security import get_current_user, require_roles
 
 router = APIRouter()
+
+FOLHA_SERVIDORES_PATH = "/folha/servidores"
 
 # Locais = o que o SIGEP-Força precisa internamente para operar.
 # Sandbox = sistemas externos (cada um com URL + chave de API próprias).
@@ -144,6 +148,70 @@ class ConectorIn(BaseModel):
 
 class TesteIn(BaseModel):
     id: Optional[str] = None
+
+
+class SincronizarFolhaOut(BaseModel):
+    sincronizados: int
+    orfaos: int
+
+
+def _map_folha_record(raw: dict) -> dict:
+    """
+    Traduz um registro da API sandbox Folha/RH para campos do model Servidor.
+
+    CONTRATO PENDENTE: os nomes de chave JSON abaixo ainda precisam ser confirmados
+    com a STI. Este é o ÚNICO ponto do código que precisa mudar quando o contrato
+    real for confirmado.
+    """
+    matricula = str(raw.get("matricula") or raw.get("Matricula") or "").strip()
+    nome = str(raw.get("nome") or raw.get("Nome") or "").strip()
+    cargo_nome = raw.get("cargo") or raw.get("cargo_nome") or raw.get("Cargo")
+    cargo_nome = str(cargo_nome).strip() if cargo_nome else None
+
+    vinculo_raw = raw.get("vinculo") or raw.get("tipo_vinculo") or raw.get("tipoVinculo") or "efetivo"
+    vinculo_txt = str(vinculo_raw).lower().strip()
+    if vinculo_txt in {"cargo_comissionado", "cc", "comissionado", "cargo comissionado"}:
+        vinculo = VinculoServidorEnum.cargo_comissionado
+    elif vinculo_txt in {"funcao_confianca", "fc", "fg", "funcao confianca", "gratificada"}:
+        vinculo = VinculoServidorEnum.funcao_confianca
+    else:
+        vinculo = VinculoServidorEnum.efetivo
+
+    unidade_ref = raw.get("unidade_id") or raw.get("unidadeId")
+    unidade_codigo = raw.get("unidade_codigo") or raw.get("unidadeCodigo") or raw.get("codigo_unidade")
+
+    return {
+        "matricula": matricula,
+        "nome": nome,
+        "vinculo": vinculo,
+        "cargo_nome": cargo_nome,
+        "unidade_ref": str(unidade_ref).strip() if unidade_ref else None,
+        "unidade_codigo": str(unidade_codigo).strip() if unidade_codigo else None,
+    }
+
+
+def _resolve_unidade_id(db: Session, mapped: dict) -> Optional[str]:
+    if mapped.get("unidade_ref"):
+        uid = mapped["unidade_ref"]
+        if db.query(Unidade).filter(Unidade.id == uid).first():
+            return uid
+    if mapped.get("unidade_codigo"):
+        codigo = mapped["unidade_codigo"]
+        row = db.query(Unidade).filter(Unidade.id == codigo).first()
+        if row:
+            return row.id
+    return None
+
+
+def _extract_folha_records(data: Any) -> list:
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for key in ("servidores", "items", "data", "records"):
+            value = data.get(key)
+            if isinstance(value, list):
+                return value
+    raise ValueError("Resposta da API Folha/RH não contém lista de servidores.")
 
 
 def _now() -> str:
@@ -414,3 +482,94 @@ def testar(
         _test_one(db, item)
     db.commit()
     return _payload(db)
+
+
+@router.post("/integracao/sincronizar-folha", response_model=SincronizarFolhaOut)
+def sincronizar_folha(
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(require_roles("gestor")),
+):
+    creds = _load_global(db)
+    url = creds["sandbox_url"].strip()
+    api_key = creds["api_key"].strip()
+    if not url or not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configure a URL sandbox e a chave de API em Integração antes de sincronizar.",
+        )
+
+    target = urljoin(url.rstrip("/") + "/", FOLHA_SERVIDORES_PATH.lstrip("/"))
+    headers = {"Authorization": f"Bearer {api_key}"}
+    try:
+        with httpx.Client(timeout=8.0, follow_redirects=True) as client:
+            res = client.get(target, headers=headers)
+        if res.status_code < 200 or res.status_code >= 400:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"API Folha/RH respondeu HTTP {res.status_code}. Verifique URL, chave e path {FOLHA_SERVIDORES_PATH}.",
+            )
+        data = res.json()
+    except HTTPException:
+        raise
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Timeout (8s) ao chamar a API Folha/RH. Confira se o sandbox está no ar.",
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Falha de rede ao chamar a API Folha/RH: {exc}",
+        )
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Resposta da API Folha/RH não é JSON válido.",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+
+    try:
+        records = _extract_folha_records(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+
+    now = datetime.now(timezone.utc)
+    sincronizados = 0
+    orfaos = 0
+    for raw in records:
+        if not isinstance(raw, dict):
+            continue
+        mapped = _map_folha_record(raw)
+        if not mapped["matricula"] or not mapped["nome"]:
+            continue
+        unidade_id = _resolve_unidade_id(db, mapped)
+        if unidade_id is None and (mapped.get("unidade_ref") or mapped.get("unidade_codigo")):
+            orfaos += 1
+
+        existing = db.query(Servidor).filter(Servidor.matricula == mapped["matricula"]).first()
+        if existing:
+            existing.nome = mapped["nome"]
+            existing.unidade_id = unidade_id
+            existing.vinculo = mapped["vinculo"]
+            existing.cargo_nome = mapped["cargo_nome"]
+            existing.sincronizado_em = now
+        else:
+            db.add(
+                Servidor(
+                    matricula=mapped["matricula"],
+                    nome=mapped["nome"],
+                    unidade_id=unidade_id,
+                    vinculo=mapped["vinculo"],
+                    cargo_nome=mapped["cargo_nome"],
+                    sincronizado_em=now,
+                )
+            )
+        sincronizados += 1
+
+    detalhe = f"{sincronizados} servidor(es) sincronizado(s)"
+    if orfaos:
+        detalhe += f"; {orfaos} órfão(s) sem unidade local"
+    _upsert_check(db, "folha", "ok", detalhe, f"sincronizados={sincronizados};orfaos={orfaos}")
+    db.commit()
+    return SincronizarFolhaOut(sincronizados=sincronizados, orfaos=orfaos)

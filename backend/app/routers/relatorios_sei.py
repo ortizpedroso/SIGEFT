@@ -267,6 +267,7 @@ def _query_unidades(db: Session):
             joinedload(Unidade.categoria),
             joinedload(Unidade.usuarios),
             joinedload(Unidade.entregas),
+            joinedload(Unidade.servidores),
         )
         .order_by(Unidade.nome)
     )

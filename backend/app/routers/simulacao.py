@@ -82,6 +82,7 @@ def simular_realocacao(
             joinedload(Unidade.categoria),
             joinedload(Unidade.usuarios),
             joinedload(Unidade.entregas),
+            joinedload(Unidade.servidores),
         )
         .filter(Unidade.id.in_(unidade_ids))
         .all()

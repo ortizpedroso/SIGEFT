@@ -4,15 +4,16 @@ from typing import List
 
 from app.database import get_db
 from app.models import Unidade, TipoUnidadeEnum, Usuario
-from app.schemas import UnidadeCreate, UnidadeOut
+from app.schemas import UnidadeCreate, UnidadeOut, ComposicaoVinculoOut
 from app.core.security import get_current_user, require_roles
-from app.services.dimensionamento import dimensionar_unidade, enum_value
+from app.services.dimensionamento import dimensionar_unidade, enum_value, composicao_vinculo
 
 router = APIRouter()
 
 
 def _to_out(unidade: Unidade) -> UnidadeOut:
     extra = dimensionar_unidade(unidade)
+    comp = composicao_vinculo(unidade)
     return UnidadeOut(
         id=unidade.id,
         nome=unidade.nome,
@@ -20,6 +21,7 @@ def _to_out(unidade: Unidade) -> UnidadeOut:
         categoria_id=unidade.categoria_id,
         ips=unidade.ips,
         categoria=unidade.categoria,
+        composicao_vinculo=ComposicaoVinculoOut(**comp),
         **extra,
     )
 
@@ -31,6 +33,7 @@ def _load_unidades(db: Session):
             joinedload(Unidade.categoria),
             joinedload(Unidade.usuarios),
             joinedload(Unidade.entregas),
+            joinedload(Unidade.servidores),
         )
         .all()
     )
@@ -63,6 +66,7 @@ def create_unidade(
             joinedload(Unidade.categoria),
             joinedload(Unidade.usuarios),
             joinedload(Unidade.entregas),
+            joinedload(Unidade.servidores),
         )
         .filter(Unidade.id == unidade.id)
         .first()

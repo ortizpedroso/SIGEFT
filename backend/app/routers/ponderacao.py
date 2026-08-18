@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Parametro, Usuario
-from app.schemas import MotorPonderacao
+from app.models import Parametro, ParametroLog, Usuario
+from app.schemas import MotorPonderacao, ParametroHistoricoItem, ParametroHistoricoOut
 from app.core.security import get_current_user, require_roles
 
 router = APIRouter()
@@ -13,6 +13,13 @@ KEYS = {
     "pesoComplexidade": "PESO_COMPLEXIDADE",
     "pesoCriticidade": "PESO_CRITICIDADE",
     "toleranciaDesvio": "TOLERANCIA_DESVIO",
+}
+
+LABELS = {
+    "PESO_VOLUME": "Peso Volume",
+    "PESO_COMPLEXIDADE": "Peso Complexidade",
+    "PESO_CRITICIDADE": "Peso Criticidade",
+    "TOLERANCIA_DESVIO": "Tolerância de Desvio",
 }
 
 DEFAULTS = {
@@ -52,9 +59,48 @@ def save_ponderacao(
     }
     for chave, valor in payload.items():
         row = db.query(Parametro).filter(Parametro.chave == chave).first()
+        valor_anterior = row.valor if row else DEFAULTS[chave]
+        if valor_anterior != valor:
+            db.add(
+                ParametroLog(
+                    usuario_id=_user.id,
+                    chave=chave,
+                    valor_anterior=valor_anterior,
+                    valor_novo=valor,
+                )
+            )
         if row:
             row.valor = valor
         else:
             db.add(Parametro(chave=chave, valor=valor))
     db.commit()
     return _read_config(db)
+
+
+@router.get("/parametros/historico", response_model=ParametroHistoricoOut)
+def listar_historico_parametros(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(require_roles("gestor")),
+):
+    query = db.query(ParametroLog).options(joinedload(ParametroLog.usuario))
+    total = query.count()
+    logs = (
+        query.order_by(ParametroLog.alterado_em.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    items = [
+        ParametroHistoricoItem(
+            id=log.id,
+            chave=log.chave,
+            valor_anterior=log.valor_anterior,
+            valor_novo=log.valor_novo,
+            alterado_em=log.alterado_em.isoformat() if log.alterado_em else "",
+            usuario_email=log.usuario.email if log.usuario else "—",
+        )
+        for log in logs
+    ]
+    return ParametroHistoricoOut(items=items, total=total, page=page, page_size=page_size)
