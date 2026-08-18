@@ -37,6 +37,8 @@ export default function IntegracaoPage() {
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncingFolha, setSyncingFolha] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
   const canEdit = canWriteCadastro(perfil);
@@ -92,6 +94,32 @@ export default function IntegracaoPage() {
     }
   };
 
+  const sincronizarFolha = async () => {
+    setSyncingFolha(true);
+    setSyncFeedback(null);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/integracao/sincronizar-folha', {
+        method: 'POST',
+        headers: jsonAuthHeaders(),
+      });
+      if (!res.ok) {
+        setError(apiErrorMessage(await res.json().catch(() => null), 'Não foi possível sincronizar com a Folha/RH.'));
+        return;
+      }
+      const body = (await res.json()) as { sincronizados: number; orfaos: number };
+      setSyncFeedback(
+        `${body.sincronizados} registro(s) sincronizado(s)` +
+          (body.orfaos > 0 ? ` · ${body.orfaos} órfão(s) sem unidade local` : '')
+      );
+      await load();
+    } catch {
+      setError('Erro ao sincronizar com a Folha/RH.');
+    } finally {
+      setSyncingFolha(false);
+    }
+  };
+
   const locais = data?.items.filter((item) => item.kind === 'local') || [];
   const externos = data?.items.filter((item) => item.kind !== 'local') || [];
 
@@ -125,6 +153,12 @@ export default function IntegracaoPage() {
             <strong className="text-rose-400">vermelho</strong> com o problema. A Instrução SEI (minutas) continua no menu próprio.
           </div>
         </div>
+
+        {syncFeedback && (
+          <div role="status" className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+            {syncFeedback}
+          </div>
+        )}
 
         {error && (
           <div role="alert" className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-300">
@@ -176,7 +210,13 @@ export default function IntegracaoPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Checklist title="Este sistema" items={locais} />
-            <Checklist title="API de integração" items={externos} />
+            <Checklist
+              title="API de integração"
+              items={externos}
+              canEdit={canEdit}
+              onSyncFolha={sincronizarFolha}
+              syncingFolha={syncingFolha}
+            />
           </div>
         )}
       </main>
@@ -184,7 +224,19 @@ export default function IntegracaoPage() {
   );
 }
 
-function Checklist({ title, items }: { title: string; items: Item[] }) {
+function Checklist({
+  title,
+  items,
+  canEdit,
+  onSyncFolha,
+  syncingFolha,
+}: {
+  title: string;
+  items: Item[];
+  canEdit?: boolean;
+  onSyncFolha?: () => void;
+  syncingFolha?: boolean;
+}) {
   return (
     <section className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
       <h2 className="text-sm font-bold text-white mb-4">{title}</h2>
@@ -227,6 +279,16 @@ function Checklist({ title, items }: { title: string; items: Item[] }) {
                   {ok && item.detalhe && <p className="mt-1 text-xs text-emerald-400">{item.detalhe}</p>}
                   {!ok && !failed && item.detalhe && (
                     <p className="mt-1 text-xs text-amber-400">{item.detalhe}</p>
+                  )}
+                  {item.id === 'folha' && canEdit && onSyncFolha && (
+                    <button
+                      type="button"
+                      onClick={onSyncFolha}
+                      disabled={syncingFolha}
+                      className="mt-3 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+                    >
+                      {syncingFolha ? 'Sincronizando…' : 'Sincronizar agora'}
+                    </button>
                   )}
                 </div>
               </div>

@@ -2,9 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { Unidade, MotorPonderacaoConfig } from '@/types';
+import { Unidade, MotorPonderacaoConfig, ParametroHistoricoResponse } from '@/types';
 import { jsonAuthHeaders, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
-import { Sliders, RefreshCw, CheckCircle2, ShieldAlert, Scale, Sparkles, AlertCircle } from 'lucide-react';
+import { Sliders, RefreshCw, CheckCircle2, ShieldAlert, Scale, Sparkles, AlertCircle, History } from 'lucide-react';
+
+const PARAM_LABELS: Record<string, string> = {
+  PESO_VOLUME: 'Peso Volume',
+  PESO_COMPLEXIDADE: 'Peso Complexidade',
+  PESO_CRITICIDADE: 'Peso Criticidade',
+  TOLERANCIA_DESVIO: 'Tolerância de Desvio',
+};
+
+function formatParamChange(chave: string, anterior: number, novo: number): string {
+  const label = PARAM_LABELS[chave] || chave;
+  const fmt = (v: number) => (chave === 'TOLERANCIA_DESVIO' ? `${v}%` : v.toFixed(2));
+  return `${label}: ${fmt(anterior)} → ${fmt(novo)}`;
+}
 
 export default function PonderacaoPage() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -18,6 +31,8 @@ export default function PonderacaoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [historico, setHistorico] = useState<ParametroHistoricoResponse | null>(null);
+  const [historicoLoading, setHistoricoLoading] = useState(false);
   const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
   const canSave = canWriteCadastro(perfil);
 
@@ -35,6 +50,14 @@ export default function PonderacaoPage() {
       if (resUnidades.ok) {
         const dataU = await resUnidades.json();
         setUnidades(dataU);
+      }
+      if (canWriteCadastro(getStoredPerfil())) {
+        setHistoricoLoading(true);
+        const resHist = await apiFetch('/api/parametros/historico?page=1&page_size=20');
+        if (resHist.ok) {
+          setHistorico((await resHist.json()) as ParametroHistoricoResponse);
+        }
+        setHistoricoLoading(false);
       }
     } catch {
       console.error('Erro ao carregar dados do motor de ponderação');
@@ -60,6 +83,10 @@ export default function PonderacaoPage() {
       if (res.ok) {
         setSuccessMsg('Pesos do motor de ponderação salvos e aplicados com sucesso!');
         setTimeout(() => setSuccessMsg(''), 4000);
+        const resHist = await apiFetch('/api/parametros/historico?page=1&page_size=20');
+        if (resHist.ok) {
+          setHistorico((await resHist.json()) as ParametroHistoricoResponse);
+        }
       }
     } catch {
       alert('Erro ao salvar parametrização');
@@ -341,6 +368,43 @@ export default function PonderacaoPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {canSave && (
+          <section className="mt-12 space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <History className="w-5 h-5 text-blue-400" />
+                Histórico de Alterações
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Registro de mudanças nos pesos e parâmetros do motor de ponderação
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
+              {historicoLoading && <p className="text-sm text-slate-400">Carregando histórico...</p>}
+              {!historicoLoading && historico && historico.items.length === 0 && (
+                <p className="text-sm text-slate-400">Nenhuma alteração registrada ainda.</p>
+              )}
+              {!historicoLoading && historico && historico.items.length > 0 && (
+                <ul className="space-y-3">
+                  {historico.items.map((item) => (
+                    <li
+                      key={item.id}
+                      className="rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-xs"
+                    >
+                      <p className="text-slate-200 font-semibold">
+                        {formatParamChange(item.chave, item.valor_anterior, item.valor_novo)}
+                      </p>
+                      <p className="text-slate-400 mt-1">
+                        {new Date(item.alterado_em).toLocaleString('pt-BR')} · {item.usuario_email}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
         )}
       </main>
     </div>

@@ -8,6 +8,21 @@ import { useEscape } from '@/lib/useEscape';
 import { Building2, Plus, Search, CheckCircle2, AlertCircle, Users, Scale, ArrowUpRight, ArrowDownRight, BarChart } from 'lucide-react';
 import CategoriaMgiField from '@/components/CategoriaMgiField';
 
+function formatComposicaoVinculo(composicao?: Unidade['composicao_vinculo']): string {
+  if (!composicao?.sincronizado) {
+    return 'Aguardando sincronização com Folha/RH';
+  }
+  const partes: string[] = [];
+  if (composicao.efetivo > 0) partes.push(`${composicao.efetivo} efetivo${composicao.efetivo > 1 ? 's' : ''}`);
+  if (composicao.cargo_comissionado > 0) {
+    partes.push(`${composicao.cargo_comissionado} CC`);
+  }
+  if (composicao.funcao_confianca > 0) {
+    partes.push(`${composicao.funcao_confianca} FC`);
+  }
+  return partes.length > 0 ? partes.join(' · ') : 'Nenhum servidor sincronizado';
+}
+
 export default function UnidadesPage() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -267,6 +282,7 @@ export default function UnidadesPage() {
                       <div>
                         <p className="text-[10px] uppercase font-bold text-slate-500">Lotação Atual</p>
                         <p className="text-base font-bold text-slate-200 mt-0.5">{servidoresAtuais} servidores</p>
+                        <p className="text-[11px] text-slate-400 mt-1">{formatComposicaoVinculo(u.composicao_vinculo)}</p>
                       </div>
 
                       <div>

@@ -19,6 +19,14 @@ export interface Unidade {
   lotacao_ideal?: number;
   balanco?: number;
   status_dimensionamento?: 'deficit' | 'ideal' | 'excesso';
+  composicao_vinculo?: ComposicaoVinculo;
+}
+
+export interface ComposicaoVinculo {
+  sincronizado: boolean;
+  efetivo: number;
+  cargo_comissionado: number;
+  funcao_confianca: number;
 }
 
 export interface Usuario {
@@ -173,6 +181,22 @@ export interface SimulacaoHistoricoItem {
 
 export interface SimulacaoHistoricoResponse {
   items: SimulacaoHistoricoItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface ParametroHistoricoItem {
+  id: string;
+  chave: string;
+  valor_anterior: number;
+  valor_novo: number;
+  alterado_em: string;
+  usuario_email: string;
+}
+
+export interface ParametroHistoricoResponse {
+  items: ParametroHistoricoItem[];
   total: number;
   page: number;
   page_size: number;
