@@ -67,6 +67,136 @@ function flattenPayload(obj: Record<string, unknown>, prefix = ''): Array<{ key:
   return rows;
 }
 
+function resolveUnidadeNome(id: string, unidades: Unidade[]): string {
+  const unidade = unidades.find((u) => u.id === id);
+  return unidade?.nome ?? 'Unidade não encontrada';
+}
+
+function resolveCategoriaNome(id: string, categorias: Categoria[]): string {
+  const categoria = categorias.find((c) => c.id === id);
+  return categoria?.nome ?? 'Categoria não encontrada';
+}
+
+function estrategiaLabel(strategy: string) {
+  return strategy === 'median' ? 'Mediana (fallback)' : 'Q₃ (padrão)';
+}
+
+function renderHistoricoEntrada(
+  item: SimulacaoHistoricoItem,
+  unidades: Unidade[],
+  categorias: Categoria[]
+) {
+  const entrada = item.payload_entrada;
+
+  if (item.tipo === 'realocacao') {
+    const movimentacoes = (entrada.movimentacoes as Array<Record<string, unknown>>) ?? [];
+    if (movimentacoes.length === 0) {
+      return <p className="text-slate-400">Nenhuma movimentação registrada.</p>;
+    }
+    return (
+      <ul className="space-y-2 text-slate-200 leading-relaxed list-none">
+        {movimentacoes.map((mov, idx) => {
+          const origem = resolveUnidadeNome(String(mov.unidade_origem_id ?? ''), unidades);
+          const destino = resolveUnidadeNome(String(mov.unidade_destino_id ?? ''), unidades);
+          const qtd = Number(mov.quantidade ?? 0);
+          return (
+            <li key={idx}>
+              Moveu {qtd} servidor{qtd !== 1 ? 'es' : ''} de <strong>{origem}</strong> para{' '}
+              <strong>{destino}</strong>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  if (item.tipo === 'q3_mediana') {
+    const categoriaNome = resolveCategoriaNome(String(entrada.categoria_id ?? ''), categorias);
+    const reducao = Number(entrada.reducao_percentual ?? 0);
+    return (
+      <p className="text-slate-200 leading-relaxed">
+        Categoria: <strong>{categoriaNome}</strong> — Redução solicitada: {reducao}%
+      </p>
+    );
+  }
+
+  return (
+    <table className="w-full">
+      <tbody>
+        {flattenPayload(entrada).map((row) => (
+          <tr key={`in-${row.key}`} className="border-b border-white/5">
+            <td className="py-1 pr-2 text-slate-500">{row.key}</td>
+            <td className="py-1 text-slate-200 break-all">{row.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function renderHistoricoResultado(item: SimulacaoHistoricoItem) {
+  const resultado = item.payload_resultado;
+
+  if (item.tipo === 'realocacao') {
+    const unidadesAfetadas = (resultado.unidades_afetadas as Array<Record<string, unknown>>) ?? [];
+    const resumo = (resultado.resumo as Record<string, unknown>) ?? {};
+    const total = Number(resumo.total_movimentado ?? 0);
+    const pioraram = Number(resumo.unidades_que_pioraram ?? 0);
+    const melhoraram = Number(resumo.unidades_que_melhoraram ?? 0);
+
+    return (
+      <div className="space-y-3 text-slate-200 leading-relaxed">
+        {unidadesAfetadas.map((u, idx) => (
+          <div key={idx} className="rounded-lg border border-white/10 bg-slate-900/40 p-3 space-y-1">
+            <p className="font-bold text-white">{String(u.nome ?? 'Unidade')}</p>
+            <p>
+              Efetivo: {Number(u.servidores_atuais_antes ?? 0)} → {Number(u.servidores_atuais_depois ?? 0)}
+            </p>
+            <p>
+              Situação: {statusLabel(String(u.status_antes ?? ''))} →{' '}
+              {statusLabel(String(u.status_depois ?? ''))}
+            </p>
+          </div>
+        ))}
+        <p className="text-slate-300 pt-1 border-t border-white/10">
+          {total} servidor{total !== 1 ? 'es' : ''} movimentado{total !== 1 ? 's' : ''} — {pioraram} unidade
+          {pioraram !== 1 ? 's' : ''} pioraram, {melhoraram} melhoraram.
+        </p>
+      </div>
+    );
+  }
+
+  if (item.tipo === 'q3_mediana') {
+    const q3 = Number(resultado.q3 ?? 0);
+    const fallback = Number(resultado.fallback ?? 0);
+    const strategy = String(resultado.strategy ?? 'q3');
+    const value = Number(resultado.value ?? 0);
+    return (
+      <div className="space-y-2 text-slate-200 leading-relaxed">
+        <p>Terceiro Quartil (Q₃): {q3}</p>
+        <p>Mediana (fallback): {fallback}</p>
+        <p>Estratégia aplicada: {estrategiaLabel(strategy)}</p>
+        <p>
+          Valor final: <strong>{value}</strong>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <table className="w-full">
+      <tbody>
+        {flattenPayload(resultado).map((row) => (
+          <tr key={`out-${row.key}`} className="border-b border-white/5">
+            <td className="py-1 pr-2 text-slate-500">{row.key}</td>
+            <td className="py-1 text-slate-200 break-all">{row.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function SimulacaoPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaId, setCategoriaId] = useState('');
@@ -567,29 +697,11 @@ export default function SimulacaoPage() {
                         <div className="border-t border-white/10 px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                           <div>
                             <p className="font-bold text-slate-300 mb-2">Entrada</p>
-                            <table className="w-full">
-                              <tbody>
-                                {flattenPayload(item.payload_entrada).map((row) => (
-                                  <tr key={`in-${row.key}`} className="border-b border-white/5">
-                                    <td className="py-1 pr-2 text-slate-500">{row.key}</td>
-                                    <td className="py-1 text-slate-200 break-all">{row.value}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            {renderHistoricoEntrada(item, unidades, categorias)}
                           </div>
                           <div>
                             <p className="font-bold text-slate-300 mb-2">Resultado</p>
-                            <table className="w-full">
-                              <tbody>
-                                {flattenPayload(item.payload_resultado).map((row) => (
-                                  <tr key={`out-${row.key}`} className="border-b border-white/5">
-                                    <td className="py-1 pr-2 text-slate-500">{row.key}</td>
-                                    <td className="py-1 text-slate-200 break-all">{row.value}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                            {renderHistoricoResultado(item)}
                           </div>
                         </div>
                       )}
