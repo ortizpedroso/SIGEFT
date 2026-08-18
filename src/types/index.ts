@@ -118,3 +118,62 @@ export interface SimulacaoResponse {
   strategy: 'q3' | 'median';
   value: number;
 }
+
+export interface MovimentacaoRealocacao {
+  unidade_origem_id: string;
+  unidade_destino_id: string;
+  quantidade: number;
+}
+
+export interface UnidadeRealocacaoResult {
+  unidade_id: string;
+  nome: string;
+  servidores_atuais_antes: number;
+  servidores_atuais_depois: number;
+  lotacao_ideal: number;
+  balanco_antes: number;
+  balanco_depois: number;
+  status_antes: string;
+  status_depois: string;
+}
+
+export interface RealocacaoResponse {
+  unidades_afetadas: UnidadeRealocacaoResult[];
+  resumo: {
+    total_movimentado: number;
+    unidades_que_pioraram: number;
+    unidades_que_melhoraram: number;
+  };
+}
+
+export interface RateioIndiretoUnidade {
+  unidade_id: string;
+  nome: string;
+  lotacao_ideal: number;
+  cota_alvo_pct: number;
+  percentual_real_pct: number;
+  desvio_pct: number;
+  classificacao: 'acima_da_cota' | 'abaixo_da_cota' | 'dentro_da_cota';
+}
+
+export interface RateioIndiretoResponse {
+  teto_global_pct: number;
+  pct_esforco_indireto_atual: number;
+  unidades: RateioIndiretoUnidade[];
+}
+
+export interface SimulacaoHistoricoItem {
+  id: string;
+  tipo: string;
+  usuario_email: string;
+  criado_em: string;
+  payload_entrada: Record<string, unknown>;
+  payload_resultado: Record<string, unknown>;
+}
+
+export interface SimulacaoHistoricoResponse {
+  items: SimulacaoHistoricoItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}

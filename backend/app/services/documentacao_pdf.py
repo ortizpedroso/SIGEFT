@@ -1,0 +1,79 @@
+"""Geração de PDF da metodologia com fpdf2."""
+
+from io import BytesIO
+from pathlib import Path
+
+from fpdf import FPDF
+
+from app.services.documentacao_content import get_cover_info, get_documento_sections
+
+DEJAVU_REGULAR = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+DEJAVU_BOLD = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+DEJAVU_MONO = Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
+
+
+class MetodologiaPDF(FPDF):
+    def __init__(self):
+        super().__init__()
+        if DEJAVU_REGULAR.exists():
+            self.add_font("DejaVu", "", str(DEJAVU_REGULAR))
+            self.add_font("DejaVu", "B", str(DEJAVU_BOLD))
+            self.add_font("DejaVuMono", "", str(DEJAVU_MONO))
+            self._font_body = ("DejaVu", "")
+            self._font_title = ("DejaVu", "B")
+            self._font_mono = ("DejaVuMono", "")
+        else:
+            self._font_body = ("Helvetica", "")
+            self._font_title = ("Helvetica", "B")
+            self._font_mono = ("Courier", "")
+
+    def footer(self):
+        cover = get_cover_info()
+        self.set_y(-15)
+        family, style = self._font_body
+        self.set_font(family, style, 8)
+        self.cell(0, 10, f"Página {self.page_no()} | {cover['rodape']}", align="C")
+
+
+def gerar_pdf_metodologia() -> bytes:
+    cover = get_cover_info()
+    sections = get_documento_sections()
+
+    pdf = MetodologiaPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+
+    title_family, title_style = pdf._font_title
+    body_family, body_style = pdf._font_body
+    mono_family, mono_style = pdf._font_mono
+
+    pdf.set_font(title_family, title_style, 16)
+    pdf.multi_cell(0, 10, cover["titulo"], align="C")
+    pdf.ln(4)
+    pdf.set_font(body_family, body_style, 12)
+    pdf.multi_cell(0, 8, cover["subtitulo"], align="C")
+    pdf.ln(4)
+    pdf.set_font(body_family, body_style, 10)
+    pdf.multi_cell(0, 6, f"Data de geração: {cover['data_geracao']}", align="C")
+    pdf.ln(10)
+
+    for section in sections:
+        pdf.set_font(title_family, title_style, 13)
+        pdf.multi_cell(0, 8, str(section["title"]))
+        pdf.ln(2)
+
+        for paragraph in section.get("paragraphs", []):
+            pdf.set_font(body_family, body_style, 10)
+            pdf.multi_cell(0, 5, str(paragraph))
+            pdf.ln(2)
+
+        for equation in section.get("equations", []):
+            pdf.set_font(mono_family, mono_style, 9)
+            pdf.multi_cell(0, 5, str(equation))
+            pdf.ln(1)
+
+        pdf.ln(4)
+
+    buffer = BytesIO()
+    pdf.output(buffer)
+    return buffer.getvalue()

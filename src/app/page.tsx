@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import DashboardCharts from "@/components/DashboardCharts";
+import RateioIndiretoSection from "@/components/RateioIndiretoSection";
 import { getApiBase } from "@/lib/backend";
 import type { DashboardStats } from "@/types";
 import { cookies } from "next/headers";
@@ -184,13 +185,16 @@ export default async function HomePage() {
 
         {/* Interactive Recharts Graphics */}
         {stats && (
-          <DashboardCharts
-            unidadesData={stats.unidades_chart_data || []}
-            categoriasData={stats.categorias_chart_data || []}
-            perfilCounts={stats.perfil_dft_counts || []}
-            pctEsforcoIndireto={stats.pct_esforco_indireto}
-            alertaCnj={stats.alerta_cnj}
-          />
+          <>
+            <DashboardCharts
+              unidadesData={stats.unidades_chart_data || []}
+              categoriasData={stats.categorias_chart_data || []}
+              perfilCounts={stats.perfil_dft_counts || []}
+              pctEsforcoIndireto={stats.pct_esforco_indireto}
+              alertaCnj={stats.alerta_cnj}
+            />
+            <RateioIndiretoSection />
+          </>
         )}
 
         {/* Quick Links */}

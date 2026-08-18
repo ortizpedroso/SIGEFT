@@ -45,3 +45,14 @@ def dimensionar_unidade(unidade: Unidade) -> dict[str, Any]:
 
 def enum_value(value: Any) -> str:
     return value.value if hasattr(value, "value") else str(value)
+
+
+def balanco_e_status(servidores: int, lotacao_ideal: int) -> tuple[int, str]:
+    balanco = servidores - lotacao_ideal
+    if balanco < 0:
+        status = "deficit"
+    elif balanco > 0:
+        status = "excesso"
+    else:
+        status = "ideal"
+    return balanco, status

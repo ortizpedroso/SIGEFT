@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Float, Enum, ForeignKey, Date, Integer, Text
+from sqlalchemy import Column, String, Float, Enum, ForeignKey, Date, Integer, Text, DateTime, func
 from sqlalchemy.orm import relationship
 import enum
 
@@ -133,3 +133,16 @@ class ParecerSEI(Base):
     minuta_texto_sei = Column(Text, nullable=False)
 
     unidade = relationship("Unidade", back_populates="pareceres")
+
+
+class SimulacaoLog(Base):
+    __tablename__ = "simulacoes_log"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    usuario_id = Column(String, ForeignKey("usuarios.id"), nullable=False)
+    tipo = Column(String, nullable=False)
+    payload_entrada = Column(Text, nullable=False)
+    payload_resultado = Column(Text, nullable=False)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    usuario = relationship("Usuario")

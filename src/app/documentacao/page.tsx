@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import { getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import {
   BookOpen,
   Calculator,
@@ -19,10 +20,36 @@ import {
   Lock,
   BarChart3,
   Briefcase,
+  Download,
 } from 'lucide-react';
 
 export default function DocumentacaoPage() {
   const [activeSection, setActiveSection] = useState('visao-geral');
+  const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    setPerfil(getStoredPerfil());
+  }, []);
+
+  const handleExportPdf = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/documentacao/pdf', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Falha ao gerar PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'metodologia-dimensionamento-tjrr.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Não foi possível exportar o PDF. Verifique se você está autenticado como gestor.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const scrollToSection = (id: string) => {
     setActiveSection(id);
@@ -61,6 +88,17 @@ export default function DocumentacaoPage() {
             <p className="doc-hero-lead w-full text-sm sm:text-base mt-3 leading-relaxed text-justify">
               Manual completo de arquitetura, módulos operacionais, diretrizes normativas da Resolução CNJ nº 219/2016 e formulário analítico de equações matemáticas para o Dimensionamento da Força de Trabalho (SIGEP-Força / TJRR).
             </p>
+            {canWriteCadastro(perfil) && (
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exporting}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-blue-600 disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                {exporting ? 'Gerando PDF...' : 'Exportar Metodologia (PDF)'}
+              </button>
+            )}
           </div>
         </div>
 

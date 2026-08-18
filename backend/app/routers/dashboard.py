@@ -5,13 +5,15 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 
 from app.database import get_db
-from app.models import Unidade, Esforco, Entrega, TipoUnidadeEnum, Categoria, Usuario
+from app.models import Unidade, Esforco, Entrega, TipoUnidadeEnum, Categoria, Usuario, Parametro
 from app.core.security import get_current_user
 from app.schemas import (
     DashboardStatsOut,
     UnidadeChartData,
     CategoriaChartData,
     PerfilCount,
+    RateioIndiretoOut,
+    RateioIndiretoUnidade,
 )
 from app.services.dimensionamento import dimensionar_unidade, enum_value
 
@@ -104,4 +106,84 @@ def get_dashboard_stats(db: Session = Depends(get_db), _user: Usuario = Depends(
         unidades_chart_data=unidades_chart,
         categorias_chart_data=categorias_chart,
         perfil_dft_counts=perfil_counts,
+    )
+
+
+def _pct_esforco_indireto(db: Session) -> float:
+    now = datetime.now()
+    esforcos_mes = (
+        db.query(Esforco)
+        .options(joinedload(Esforco.entrega).joinedload(Entrega.unidade))
+        .filter(
+            func.extract("year", Esforco.mes_referencia) == now.year,
+            func.extract("month", Esforco.mes_referencia) == now.month,
+        )
+        .all()
+    )
+    esforco_total = sum(e.percentual for e in esforcos_mes)
+    esforco_indireto = 0.0
+    for e in esforcos_mes:
+        if e.entrega and e.entrega.unidade and enum_value(e.entrega.unidade.tipo) == TipoUnidadeEnum.apoio_indireto.value:
+            esforco_indireto += e.percentual
+    return round((esforco_indireto / esforco_total * 100.0) if esforco_total > 0 else 0.0, 1)
+
+
+@router.get("/dashboard/rateio-indireto", response_model=RateioIndiretoOut)
+def get_rateio_indireto(db: Session = Depends(get_db), _user: Usuario = Depends(get_current_user)):
+    parametros = {p.chave: p.valor for p in db.query(Parametro).all()}
+    teto_global = parametros.get("TETO_APOIO_INDIRETO", 30.0)
+    tolerancia = parametros.get("TOLERANCIA_DESVIO", 20.0)
+
+    unidades = (
+        db.query(Unidade)
+        .options(
+            joinedload(Unidade.categoria),
+            joinedload(Unidade.usuarios),
+            joinedload(Unidade.entregas),
+        )
+        .all()
+    )
+
+    indiretas = [u for u in unidades if enum_value(u.tipo) == TipoUnidadeEnum.apoio_indireto.value]
+    dim_por_unidade = {u.id: dimensionar_unidade(u) for u in unidades}
+    total_servidores = sum(dim_por_unidade[u.id]["servidores_atuais"] for u in unidades)
+    soma_lotacao_indireto = sum(dim_por_unidade[u.id]["lotacao_ideal"] for u in indiretas)
+
+    unidades_rateio: list[RateioIndiretoUnidade] = []
+    for u in indiretas:
+        dim = dim_por_unidade[u.id]
+        lotacao_ideal = dim["lotacao_ideal"]
+        servidores = dim["servidores_atuais"]
+
+        if soma_lotacao_indireto > 0:
+            cota_alvo = teto_global * (lotacao_ideal / soma_lotacao_indireto)
+        else:
+            cota_alvo = 0.0
+
+        percentual_real = (servidores / total_servidores * 100.0) if total_servidores > 0 else 0.0
+        desvio = percentual_real - cota_alvo
+
+        if desvio > tolerancia:
+            classificacao = "acima_da_cota"
+        elif desvio < -tolerancia:
+            classificacao = "abaixo_da_cota"
+        else:
+            classificacao = "dentro_da_cota"
+
+        unidades_rateio.append(
+            RateioIndiretoUnidade(
+                unidade_id=u.id,
+                nome=u.nome,
+                lotacao_ideal=lotacao_ideal,
+                cota_alvo_pct=round(cota_alvo, 1),
+                percentual_real_pct=round(percentual_real, 1),
+                desvio_pct=round(desvio, 1),
+                classificacao=classificacao,
+            )
+        )
+
+    return RateioIndiretoOut(
+        teto_global_pct=teto_global,
+        pct_esforco_indireto_atual=_pct_esforco_indireto(db),
+        unidades=sorted(unidades_rateio, key=lambda x: x.nome),
     )
