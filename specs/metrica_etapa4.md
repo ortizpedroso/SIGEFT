@@ -130,7 +130,8 @@ Campo `composicao_vinculo`:
 ### POST /api/ponderacao (incremento)
 
 - Antes de gravar cada chave, compara valor novo com atual (`parametros.valor` ou `DEFAULTS`).
-- Se diferente, insere linha em `parametros_log` com `usuario_id` do gestor autenticado.
+- Considera mudança real somente se `abs(valor_anterior - valor) > 1e-9` (tolerância contra imprecisão de ponto flutuante).
+- Se diferente além da tolerância, insere linha em `parametros_log` com `usuario_id` do gestor autenticado.
 
 ### GET /api/parametros/historico
 
@@ -143,7 +144,7 @@ Campo `composicao_vinculo`:
 
 ## 7. UI (incremento)
 
-- **`/integracao`:** botão **Sincronizar agora** no card Folha/RH (gestor); feedback `sincronizados` / `orfaos`.
+- **`/integracao`:** botão **Sincronizar agora** no card Folha/RH (gestor); feedback `sincronizados` / `orfaos`. Botão **desabilitado** quando `sandbox_url` vazio ou `has_key` falso (texto de apoio orientando configurar URL e chave acima); backend mantém validação HTTP 400.
 - **`/unidades`:** ao lado de lotação atual — se sincronizado: `"3 efetivos · 1 CC · 1 FC"` (omite zeros); se não: **"Aguardando sincronização com Folha/RH"**.
 - **`/ponderacao`:** seção **Histórico de Alterações** abaixo dos sliders; rótulos amigáveis (ex.: "Peso Volume: 0.40 → 0.45"); sem UUID nem chave técnica crua.
 
@@ -165,9 +166,28 @@ Campo `composicao_vinculo`:
 
 ---
 
-## 9. Histórico de Versões
+## 10. Decisões diante de ambiguidade
+
+1. **`unidade_codigo`:** resolvido tentando match com `unidades.id` (não há campo `codigo` separado no organograma local). Se a STI usar outro identificador, basta ajustar `_resolve_unidade_id`.
+2. **Registros sem matrícula/nome:** ignorados silenciosamente (não abortam a sincronização).
+3. **Órfãos:** gravados com `unidade_id = NULL` e contados em `orfaos`; sincronização continua.
+4. **Log de parâmetros:** comparação com tolerância `abs(valor_anterior - valor) > 1e-9` em vez de `!=` exato — imprecisão de ponto flutuante (ex.: `0.1 + 0.2 + 0.15` em JavaScript não é exatamente `0.45`) pode gerar entradas de log falsas se a comparação for exata.
+5. **Endpoint de histórico:** mantido em `ponderacao.py` (sem router novo), prefixo `/api/parametros/historico`.
+
+---
+
+## 11. Melhorias fora do escopo (não implementadas)
+
+- Campo `codigo_externo` em `Unidade` para match mais robusto com organograma da Folha
+- Paginação/infinite scroll no histórico de parâmetros na UI (backend já pagina)
+- Expor rótulo amigável da chave no backend (hoje traduzido no front via `PARAM_LABELS`)
+
+---
+
+## 11. Histórico de Versões
 
 | Versão | Data | Alteração |
 |--------|------|-----------|
 | 1.5.0-etapa4 | 2026-08-18 | Início da Etapa 4: tabela `servidores`, sincronização Folha/RH (`POST /integracao/sincronizar-folha`), composição de vínculo em unidades, `dimensionar_unidade` com fallback, `parametros_log`, histórico de ponderação, UI correspondente. |
 | 1.5.1-etapa4-build | 2026-08-18 | Implementação completa: migrações 0005/0006, mapeamento `_map_folha_record` isolado, testes mockados, BFF e telas Integração/Unidades/Ponderação. |
+| 1.5.2-etapa4-fixes | 2026-08-18 | Ajustes finais: tolerância float no log de parâmetros (`1e-9`); botão "Sincronizar agora" desabilitado sem URL/chave configuradas, com texto de apoio na UI. |

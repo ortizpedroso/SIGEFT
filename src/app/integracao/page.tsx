@@ -216,6 +216,8 @@ export default function IntegracaoPage() {
               canEdit={canEdit}
               onSyncFolha={sincronizarFolha}
               syncingFolha={syncingFolha}
+              sandboxUrl={data?.sandbox_url}
+              hasKey={data?.has_key}
             />
           </div>
         )}
@@ -230,13 +232,18 @@ function Checklist({
   canEdit,
   onSyncFolha,
   syncingFolha,
+  sandboxUrl,
+  hasKey,
 }: {
   title: string;
   items: Item[];
   canEdit?: boolean;
   onSyncFolha?: () => void;
   syncingFolha?: boolean;
+  sandboxUrl?: string;
+  hasKey?: boolean;
 }) {
+  const syncReady = Boolean(sandboxUrl?.trim()) && Boolean(hasKey);
   return (
     <section className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
       <h2 className="text-sm font-bold text-white mb-4">{title}</h2>
@@ -281,14 +288,21 @@ function Checklist({
                     <p className="mt-1 text-xs text-amber-400">{item.detalhe}</p>
                   )}
                   {item.id === 'folha' && canEdit && onSyncFolha && (
-                    <button
-                      type="button"
-                      onClick={onSyncFolha}
-                      disabled={syncingFolha}
-                      className="mt-3 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
-                    >
-                      {syncingFolha ? 'Sincronizando…' : 'Sincronizar agora'}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={onSyncFolha}
+                        disabled={syncingFolha || !syncReady}
+                        className="mt-3 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+                      >
+                        {syncingFolha ? 'Sincronizando…' : 'Sincronizar agora'}
+                      </button>
+                      {!syncReady && (
+                        <p className="mt-2 text-xs text-amber-400">
+                          Configure a URL sandbox e a chave de API acima antes de sincronizar.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

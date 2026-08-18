@@ -60,7 +60,7 @@ def save_ponderacao(
     for chave, valor in payload.items():
         row = db.query(Parametro).filter(Parametro.chave == chave).first()
         valor_anterior = row.valor if row else DEFAULTS[chave]
-        if valor_anterior != valor:
+        if abs(valor_anterior - valor) > 1e-9:
             db.add(
                 ParametroLog(
                     usuario_id=_user.id,
