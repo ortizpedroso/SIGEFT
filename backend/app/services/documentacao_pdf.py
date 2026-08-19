@@ -1,5 +1,6 @@
 """Geração de PDF da metodologia com fpdf2."""
 
+import re
 from io import BytesIO
 from pathlib import Path
 
@@ -10,6 +11,11 @@ from app.services.documentacao_content import get_cover_info, get_documento_sect
 DEJAVU_REGULAR = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
 DEJAVU_BOLD = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 DEJAVU_MONO = Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
+
+
+def _pdf_wrap_text(text: str) -> str:
+    """Insere quebras em tokens longos (URLs/paths) para o fpdf2 conseguir quebrar linhas."""
+    return re.sub(r"/", "/\n", text)
 
 
 class MetodologiaPDF(FPDF):
@@ -64,7 +70,18 @@ def gerar_pdf_metodologia() -> bytes:
 
         for paragraph in section.get("paragraphs", []):
             pdf.set_font(body_family, body_style, 10)
-            pdf.multi_cell(0, 5, str(paragraph))
+            pdf.multi_cell(0, 5, _pdf_wrap_text(str(paragraph)))
+            pdf.ln(2)
+
+        for modulo in section.get("modulos", []):
+            titulo = str(modulo.get("titulo", ""))
+            rota = str(modulo.get("rota", ""))
+            descricao = str(modulo.get("descricao", ""))
+            pdf.set_font(title_family, title_style, 10)
+            pdf.multi_cell(0, 5, _pdf_wrap_text(f"{titulo} ({rota})"))
+            pdf.ln(1)
+            pdf.set_font(body_family, body_style, 10)
+            pdf.multi_cell(0, 5, _pdf_wrap_text(descricao))
             pdf.ln(2)
 
         for equation in section.get("equations", []):
