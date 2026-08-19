@@ -5,6 +5,7 @@ from io import BytesIO
 from pathlib import Path
 
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 from app.services.documentacao_content import get_cover_info, get_documento_sections
 
@@ -41,6 +42,28 @@ class MetodologiaPDF(FPDF):
         self.cell(0, 10, f"Página {self.page_no()} | {cover['rodape']}", align="C")
 
 
+def _pdf_mono_line(text: str) -> str:
+    """Prepara linha monoespaçada para o fpdf2 (substitui símbolos e quebra tokens longos)."""
+    normalized = (
+        str(text)
+        .replace("×", "x")
+        .replace("→", "->")
+        .replace("⇒", "=>")
+        .replace("Σ", "SUM")
+        .replace("_", "_\n  ")
+    )
+    if len(normalized) > 72:
+        for sep in (" = ", " + ", " - ", " x ", " * ", ", ", ") ", " ("):
+            normalized = normalized.replace(sep, f"{sep}\n  ")
+    return normalized
+
+
+def _pdf_write_block(pdf: MetodologiaPDF, height: int, text: str) -> None:
+    """Escreve parágrafo garantindo retorno à margem esquerda (evita erro fpdf2)."""
+    pdf.set_x(pdf.l_margin)
+    pdf.multi_cell(0, height, text, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+
 def gerar_pdf_metodologia() -> bytes:
     cover = get_cover_info()
     sections = get_documento_sections()
@@ -54,23 +77,23 @@ def gerar_pdf_metodologia() -> bytes:
     mono_family, mono_style = pdf._font_mono
 
     pdf.set_font(title_family, title_style, 16)
-    pdf.multi_cell(0, 10, cover["titulo"], align="C")
+    _pdf_write_block(pdf, 10, cover["titulo"])
     pdf.ln(4)
     pdf.set_font(body_family, body_style, 12)
-    pdf.multi_cell(0, 8, cover["subtitulo"], align="C")
+    _pdf_write_block(pdf, 8, cover["subtitulo"])
     pdf.ln(4)
     pdf.set_font(body_family, body_style, 10)
-    pdf.multi_cell(0, 6, f"Data de geração: {cover['data_geracao']}", align="C")
+    _pdf_write_block(pdf, 6, f"Data de geração: {cover['data_geracao']}")
     pdf.ln(10)
 
     for section in sections:
         pdf.set_font(title_family, title_style, 13)
-        pdf.multi_cell(0, 8, str(section["title"]))
+        _pdf_write_block(pdf, 8, str(section["title"]))
         pdf.ln(2)
 
         for paragraph in section.get("paragraphs", []):
             pdf.set_font(body_family, body_style, 10)
-            pdf.multi_cell(0, 5, _pdf_wrap_text(str(paragraph)))
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(str(paragraph)))
             pdf.ln(2)
 
         for modulo in section.get("modulos", []):
@@ -78,16 +101,46 @@ def gerar_pdf_metodologia() -> bytes:
             rota = str(modulo.get("rota", ""))
             descricao = str(modulo.get("descricao", ""))
             pdf.set_font(title_family, title_style, 10)
-            pdf.multi_cell(0, 5, _pdf_wrap_text(f"{titulo} ({rota})"))
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(f"{titulo} ({rota})"))
             pdf.ln(1)
             pdf.set_font(body_family, body_style, 10)
-            pdf.multi_cell(0, 5, _pdf_wrap_text(descricao))
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(descricao))
             pdf.ln(2)
 
-        for equation in section.get("equations", []):
-            pdf.set_font(mono_family, mono_style, 9)
-            pdf.multi_cell(0, 5, str(equation))
+        for formula in section.get("formulas", []):
+            titulo = str(formula.get("titulo", ""))
+            explicacao = str(formula.get("explicacao", ""))
+            linhas = formula.get("formula", [])
+            pdf.set_font(title_family, title_style, 10)
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(titulo))
             pdf.ln(1)
+            pdf.set_font(body_family, body_style, 10)
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(explicacao))
+            pdf.ln(1)
+            pdf.set_font(mono_family, mono_style, 9)
+            for linha in linhas:
+                prepared = _pdf_mono_line(str(linha))
+                for sublinha in prepared.split("\n"):
+                    _pdf_write_block(pdf, 5, sublinha)
+            pdf.ln(2)
+
+        for exemplo in section.get("exemplos", []):
+            titulo = str(exemplo.get("titulo", ""))
+            contexto = str(exemplo.get("contexto", ""))
+            passos = exemplo.get("passos", [])
+            resultado = str(exemplo.get("resultado", ""))
+            pdf.set_font(title_family, title_style, 10)
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(titulo))
+            pdf.ln(1)
+            pdf.set_font(body_family, body_style, 10)
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(contexto))
+            pdf.ln(1)
+            for idx, passo in enumerate(passos, start=1):
+                _pdf_write_block(pdf, 5, _pdf_wrap_text(f"{idx}. {passo}"))
+            pdf.ln(1)
+            pdf.set_font(title_family, title_style, 10)
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(f"Resultado: {resultado}"))
+            pdf.ln(2)
 
         pdf.ln(4)
 

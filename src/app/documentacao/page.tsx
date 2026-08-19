@@ -29,11 +29,25 @@ type DocumentoModulo = {
   descricao: string;
 };
 
+type DocumentoFormula = {
+  titulo: string;
+  explicacao: string;
+  formula: string[];
+};
+
+type DocumentoExemplo = {
+  titulo: string;
+  contexto: string;
+  passos: string[];
+  resultado: string;
+};
+
 type DocumentoSection = {
   title: string;
   paragraphs?: string[];
   modulos?: DocumentoModulo[];
-  equations?: string[];
+  formulas?: DocumentoFormula[];
+  exemplos?: DocumentoExemplo[];
 };
 
 const SECTION_NAV = [
@@ -201,11 +215,59 @@ export default function DocumentacaoPage() {
       );
     }
 
-    if (section.equations?.length) {
+    if (section.formulas?.length) {
       return (
-        <pre className="rounded-xl border border-white/10 bg-slate-950/80 p-5 text-xs sm:text-sm font-mono text-slate-300 leading-relaxed whitespace-pre-wrap overflow-x-auto">
-          {section.equations.join('\n')}
-        </pre>
+        <div className="space-y-5">
+          {section.formulas.map((item) => (
+            <div
+              key={item.titulo}
+              className="rounded-xl border border-white/10 bg-slate-950/50 p-5 space-y-4"
+            >
+              <h3 className="text-sm font-bold text-emerald-400">{item.titulo}</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed text-justify">
+                  {item.explicacao}
+                </p>
+                <pre className="rounded-lg border border-white/10 bg-slate-950/80 p-4 text-xs font-mono text-slate-300 leading-relaxed whitespace-pre-wrap overflow-x-auto">
+                  {item.formula.join('\n')}
+                </pre>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (section.exemplos?.length) {
+      return (
+        <div className="space-y-5">
+          {section.exemplos.map((item) => (
+            <div
+              key={item.titulo}
+              className="rounded-xl border border-white/10 bg-slate-950/50 p-5 space-y-4"
+            >
+              <h3 className="text-sm font-bold text-blue-400">{item.titulo}</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed text-justify">
+                {item.contexto}
+              </p>
+              <ol className="list-decimal list-inside space-y-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {item.passos.map((passo, idx) => (
+                  <li key={idx} className="text-justify">
+                    {passo}
+                  </li>
+                ))}
+              </ol>
+              <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-400 mb-1">
+                  Resultado
+                </p>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed text-justify">
+                  {item.resultado}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       );
     }
 
