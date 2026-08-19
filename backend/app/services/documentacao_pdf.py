@@ -39,7 +39,7 @@ class MetodologiaPDF(FPDF):
         self.set_y(-15)
         family, style = self._font_body
         self.set_font(family, style, 8)
-        self.cell(0, 10, f"Página {self.page_no()} | {cover['rodape']}", align="C")
+        self.cell(0, 10, f"{cover['rodape']} — Página {self.page_no()}", align="C")
 
 
 def _pdf_mono_line(text: str) -> str:
@@ -58,10 +58,19 @@ def _pdf_mono_line(text: str) -> str:
     return normalized
 
 
-def _pdf_write_block(pdf: MetodologiaPDF, height: int, text: str) -> None:
+def _pdf_write_block(
+    pdf: MetodologiaPDF,
+    height: int,
+    text: str,
+    align: str | None = None,
+) -> None:
     """Escreve parágrafo garantindo retorno à margem esquerda (evita erro fpdf2)."""
     pdf.set_x(pdf.l_margin)
-    pdf.multi_cell(0, height, text, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    kwargs: dict = {"new_x": XPos.LMARGIN, "new_y": YPos.NEXT}
+    if align:
+        pdf.multi_cell(0, height, text, align=align, **kwargs)
+    else:
+        pdf.multi_cell(0, height, text, **kwargs)
 
 
 def gerar_pdf_metodologia() -> bytes:
@@ -88,12 +97,12 @@ def gerar_pdf_metodologia() -> bytes:
 
     for section in sections:
         pdf.set_font(title_family, title_style, 13)
-        _pdf_write_block(pdf, 8, str(section["title"]))
+        _pdf_write_block(pdf, 8, str(section["title"]), align="C")
         pdf.ln(2)
 
         for paragraph in section.get("paragraphs", []):
             pdf.set_font(body_family, body_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(str(paragraph)))
+            _pdf_write_block(pdf, 5, _pdf_wrap_text(f"      {paragraph}"))
             pdf.ln(2)
 
         for modulo in section.get("modulos", []):

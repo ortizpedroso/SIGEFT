@@ -522,3 +522,30 @@ html.light .hover\:bg-white\/10:hover {
   background-color: #e2e8f0 !important;
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #minuta-impressao,
+  #minuta-impressao * {
+    visibility: visible;
+  }
+
+  #minuta-impressao {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    padding: 0 !important;
+    white-space: pre-wrap !important;
+  }
+}

@@ -331,5 +331,5 @@ def get_cover_info() -> dict[str, str]:
         "titulo": "Metodologia de Dimensionamento da Força de Trabalho — TJRR",
         "subtitulo": "Documento Técnico para Homologação — SUBGFT",
         "data_geracao": now.strftime("%d/%m/%Y %H:%M"),
-        "rodape": f"Documento gerado automaticamente pelo sistema Métrica em {now.strftime('%d/%m/%Y %H:%M')}",
+        "rodape": "SIGEP-Força | TJRR · SUBGFT",
     }

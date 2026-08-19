@@ -30,6 +30,13 @@ export default function RelatoriosSEIPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [printTargetId, setPrintTargetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const clearPrintTarget = () => setPrintTargetId(null);
+    window.addEventListener('afterprint', clearPrintTarget);
+    return () => window.removeEventListener('afterprint', clearPrintTarget);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -115,6 +122,11 @@ export default function RelatoriosSEIPage() {
     } finally {
       setSavingEdit(false);
     }
+  };
+
+  const handlePrintMinuta = (parecerId: string) => {
+    setPrintTargetId(parecerId);
+    requestAnimationFrame(() => window.print());
   };
 
   const handleCopySEI = (text: string, id: string) => {
@@ -213,7 +225,7 @@ export default function RelatoriosSEIPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => window.print()}
+                      onClick={() => handlePrintMinuta(p.id)}
                       className="p-2 rounded-xl border border-white/10 bg-slate-950/60 text-slate-400 hover:text-white hover:bg-white/5"
                       title="Imprimir Parecer"
                     >
@@ -273,7 +285,10 @@ export default function RelatoriosSEIPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-slate-950/90 rounded-xl p-4 border border-white/10 text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                  <div
+                    id={printTargetId === p.id ? 'minuta-impressao' : undefined}
+                    className="bg-slate-950/90 rounded-xl p-4 border border-white/10 text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto"
+                  >
                     {p.minutaTextoSEI}
                   </div>
                 )}
