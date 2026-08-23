@@ -47,6 +47,18 @@ def upgrade():
         sa.Column("habilidade_id", sa.String(), sa.ForeignKey("habilidades.id"), primary_key=True),
     )
 
+    # No PostgreSQL, `op.create_table` cria o tipo ENUM automaticamente, mas
+    # `batch_alter_table`/`add_column` NÃO cria — ele assume que o tipo já
+    # existe. Por isso os dois tipos usados abaixo precisam ser criados
+    # explicitamente (idempotente via checkfirst=True) antes do batch.
+    nivel_escolaridade_enum = sa.Enum("medio", "superior", name="nivelescolaridadeenum")
+    status_lotacao_enum = sa.Enum(
+        "lotado", "sem_lotacao", "disponivel_realocacao", name="statuslotacaoenum"
+    )
+    bind = op.get_bind()
+    nivel_escolaridade_enum.create(bind, checkfirst=True)
+    status_lotacao_enum.create(bind, checkfirst=True)
+
     with op.batch_alter_table("servidores") as batch_op:
         batch_op.add_column(
             sa.Column(
@@ -63,6 +75,7 @@ def upgrade():
                     "sem_lotacao",
                     "disponivel_realocacao",
                     name="statuslotacaoenum",
+                    create_type=False,
                 ),
                 nullable=False,
                 server_default="sem_lotacao",
