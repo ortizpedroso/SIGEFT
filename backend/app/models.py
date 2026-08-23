@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Float, Enum, ForeignKey, Date, Integer, Text, DateTime, func
+from sqlalchemy import Column, String, Float, Enum, ForeignKey, Date, Integer, Text, DateTime, func, Table
 from sqlalchemy.orm import relationship
 import enum
 
@@ -25,6 +25,32 @@ class VinculoServidorEnum(str, enum.Enum):
     efetivo = "efetivo"
     cargo_comissionado = "cargo_comissionado"
     funcao_confianca = "funcao_confianca"
+
+
+class NivelEscolaridadeEnum(str, enum.Enum):
+    medio = "medio"
+    superior = "superior"
+
+
+class StatusLotacaoEnum(str, enum.Enum):
+    lotado = "lotado"
+    sem_lotacao = "sem_lotacao"
+    disponivel_realocacao = "disponivel_realocacao"
+
+
+perfil_vaga_habilidade = Table(
+    "perfil_vaga_habilidade",
+    Base.metadata,
+    Column("perfil_vaga_id", String, ForeignKey("unidade_perfil_vaga.id"), primary_key=True),
+    Column("habilidade_id", String, ForeignKey("habilidades.id"), primary_key=True),
+)
+
+servidor_habilidade = Table(
+    "servidor_habilidade",
+    Base.metadata,
+    Column("servidor_id", String, ForeignKey("servidores.id"), primary_key=True),
+    Column("habilidade_id", String, ForeignKey("habilidades.id"), primary_key=True),
+)
 
 
 class Categoria(Base):
@@ -59,6 +85,7 @@ class Unidade(Base):
     entregas = relationship("Entrega", back_populates="unidade")
     servidores = relationship("Servidor", back_populates="unidade")
     pareceres = relationship("ParecerSEI", back_populates="unidade")
+    perfis_vaga = relationship("UnidadePerfilVaga", back_populates="unidade", cascade="all, delete-orphan")
 
 
 class ConfigTexto(Base):
@@ -165,8 +192,38 @@ class Servidor(Base):
     vinculo = Column(Enum(VinculoServidorEnum), nullable=False)
     cargo_nome = Column(String, nullable=True)
     sincronizado_em = Column(DateTime(timezone=True), nullable=False)
+    nivel_escolaridade = Column(Enum(NivelEscolaridadeEnum), nullable=True)
+    status_lotacao = Column(
+        Enum(StatusLotacaoEnum),
+        nullable=False,
+        default=StatusLotacaoEnum.sem_lotacao,
+    )
 
     unidade = relationship("Unidade", back_populates="servidores")
+    habilidades = relationship("Habilidade", secondary=servidor_habilidade, back_populates="servidores")
+
+
+class Habilidade(Base):
+    __tablename__ = "habilidades"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    nome = Column(String, nullable=False, unique=True)
+
+    servidores = relationship("Servidor", secondary=servidor_habilidade, back_populates="habilidades")
+    perfis_vaga = relationship("UnidadePerfilVaga", secondary=perfil_vaga_habilidade, back_populates="habilidades")
+
+
+class UnidadePerfilVaga(Base):
+    __tablename__ = "unidade_perfil_vaga"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    unidade_id = Column(String, ForeignKey("unidades.id"), nullable=False)
+    nome_perfil = Column(String, nullable=False)
+    quantidade = Column(Integer, nullable=False)
+    nivel_escolaridade = Column(Enum(NivelEscolaridadeEnum), nullable=False)
+
+    unidade = relationship("Unidade", back_populates="perfis_vaga")
+    habilidades = relationship("Habilidade", secondary=perfil_vaga_habilidade, back_populates="perfis_vaga")
 
 
 class ParametroLog(Base):

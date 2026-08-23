@@ -14,8 +14,13 @@ from app.schemas import (
     RealocacaoResumo,
     SimulacaoHistoricoOut,
     SimulacaoHistoricoItem,
+    ServidoresDisponiveisOut,
+    ServidorDisponivelOut,
+    UnidadeCandidataOut,
+    HabilidadeOut,
 )
-from app.core.security import require_roles
+from app.core.security import require_roles, get_current_user
+from app.services.compatibilidade import listar_servidores_disponiveis
 from app.services.dimensionamento import dimensionar_unidade, balanco_e_status
 from app.services.simulacao_log import registrar_simulacao
 
@@ -210,3 +215,27 @@ def listar_historico_simulacoes(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/simulacao/servidores-disponiveis", response_model=ServidoresDisponiveisOut)
+def servidores_disponiveis(
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(get_current_user),
+):
+    raw = listar_servidores_disponiveis(db)
+    items = [
+        ServidorDisponivelOut(
+            id=item["id"],
+            matricula=item["matricula"],
+            nome=item["nome"],
+            nivel_escolaridade=item["nivel_escolaridade"],
+            status_lotacao=item["status_lotacao"],
+            unidade_id=item["unidade_id"],
+            unidade_nome=item["unidade_nome"],
+            habilidades=[HabilidadeOut(**h) for h in item["habilidades"]],
+            origem=item["origem"],
+            unidades_candidatas=[UnidadeCandidataOut(**u) for u in item["unidades_candidatas"]],
+        )
+        for item in raw
+    ]
+    return ServidoresDisponiveisOut(items=items)

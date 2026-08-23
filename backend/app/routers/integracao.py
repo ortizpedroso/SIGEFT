@@ -21,6 +21,7 @@ from app.models import (
     Unidade,
     Usuario,
     VinculoServidorEnum,
+    StatusLotacaoEnum,
 )
 from app.core.security import get_current_user, require_roles
 
@@ -547,6 +548,16 @@ def sincronizar_folha(
         if unidade_id is None and (mapped.get("unidade_ref") or mapped.get("unidade_codigo")):
             orfaos += 1
 
+        # Folha/RH é a fonte de verdade para lotação real no sync. Servidores sem unidade
+        # resolvida ficam sem_lotacao — unifica servidor genuinamente novo e órfão por erro
+        # de mapeamento de organograma (limitação conhecida: a Folha/RH não diferencia hoje).
+        # Se o gestor marcou disponivel_realocacao, um sync com unidade resolvida sobrescreve
+        # para lotado normalmente.
+        if unidade_id:
+            status_lotacao = StatusLotacaoEnum.lotado
+        else:
+            status_lotacao = StatusLotacaoEnum.sem_lotacao
+
         existing = db.query(Servidor).filter(Servidor.matricula == mapped["matricula"]).first()
         if existing:
             existing.nome = mapped["nome"]
@@ -554,6 +565,7 @@ def sincronizar_folha(
             existing.vinculo = mapped["vinculo"]
             existing.cargo_nome = mapped["cargo_nome"]
             existing.sincronizado_em = now
+            existing.status_lotacao = status_lotacao
         else:
             db.add(
                 Servidor(
@@ -563,6 +575,7 @@ def sincronizar_folha(
                     vinculo=mapped["vinculo"],
                     cargo_nome=mapped["cargo_nome"],
                     sincronizado_em=now,
+                    status_lotacao=status_lotacao,
                 )
             )
         sincronizados += 1

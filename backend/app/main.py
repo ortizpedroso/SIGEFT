@@ -19,6 +19,8 @@ from app.routers import (
     relatorios_sei,
     integracao,
     documentacao,
+    habilidades,
+    servidores,
 )
 
 _ENV = os.getenv("ENV", "development").lower()
@@ -76,6 +78,8 @@ app.include_router(ponderacao.router, prefix="/api", tags=["Ponderação"])
 app.include_router(relatorios_sei.router, prefix="/api", tags=["Relatórios SEI"])
 app.include_router(integracao.router, prefix="/api", tags=["Integração"])
 app.include_router(documentacao.router, prefix="/api", tags=["Documentação"])
+app.include_router(habilidades.router, prefix="/api", tags=["Habilidades"])
+app.include_router(servidores.router, prefix="/api", tags=["Servidores"])
 
 
 @app.get("/")

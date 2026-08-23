@@ -201,3 +201,54 @@ export interface ParametroHistoricoResponse {
   page: number;
   page_size: number;
 }
+
+export interface Habilidade {
+  id: string;
+  nome: string;
+}
+
+export interface PerfilVaga {
+  id: string;
+  unidade_id: string;
+  nome_perfil: string;
+  quantidade: number;
+  nivel_escolaridade: 'medio' | 'superior';
+  habilidades: Habilidade[];
+}
+
+export interface UnidadeCandidata {
+  unidade_id: string;
+  unidade_nome: string;
+  score: number;
+  em_deficit: boolean;
+  lotacao_ideal: number;
+  servidores_atuais: number;
+}
+
+export interface ServidorDisponivel {
+  id: string;
+  matricula: string;
+  nome: string;
+  nivel_escolaridade: 'medio' | 'superior' | null;
+  status_lotacao: string;
+  unidade_id: string | null;
+  unidade_nome: string | null;
+  habilidades: Habilidade[];
+  origem: 'novo' | 'liberado';
+  unidades_candidatas: UnidadeCandidata[];
+}
+
+export interface ServidoresDisponiveisResponse {
+  items: ServidorDisponivel[];
+}
+
+export interface ServidorBasico {
+  id: string;
+  matricula: string;
+  nome: string;
+  nivel_escolaridade: 'medio' | 'superior' | null;
+  status_lotacao: string;
+  unidade_id: string | null;
+  unidade_nome: string | null;
+  habilidades: Habilidade[];
+}

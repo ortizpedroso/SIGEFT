@@ -299,3 +299,74 @@ class ParecerSEIOut(BaseModel):
     dataEmissao: str
     analistaResponsavel: str
     minutaTextoSEI: str
+
+
+class HabilidadeOut(BaseModel):
+    id: str
+    nome: str
+
+
+class HabilidadeCreate(BaseModel):
+    nome: str = Field(min_length=1, max_length=200)
+
+
+class PerfilVagaCreate(BaseModel):
+    nome_perfil: str = Field(min_length=1, max_length=200)
+    quantidade: int = Field(ge=1)
+    nivel_escolaridade: str
+    habilidade_ids: List[str] = Field(default_factory=list)
+
+
+class PerfilVagaOut(BaseModel):
+    id: str
+    unidade_id: str
+    nome_perfil: str
+    quantidade: int
+    nivel_escolaridade: str
+    habilidades: List[HabilidadeOut] = Field(default_factory=list)
+
+
+class ServidorUpdate(BaseModel):
+    nivel_escolaridade: Optional[str] = None
+    habilidade_ids: Optional[List[str]] = None
+
+
+class ServidorBasicoOut(BaseModel):
+    id: str
+    matricula: str
+    nome: str
+    nivel_escolaridade: Optional[str] = None
+    status_lotacao: str
+    unidade_id: Optional[str] = None
+    unidade_nome: Optional[str] = None
+    habilidades: List[HabilidadeOut] = Field(default_factory=list)
+
+
+class UnidadeCandidataOut(BaseModel):
+    unidade_id: str
+    unidade_nome: str
+    score: float
+    em_deficit: bool
+    lotacao_ideal: int
+    servidores_atuais: int
+
+
+class ServidorDisponivelOut(BaseModel):
+    id: str
+    matricula: str
+    nome: str
+    nivel_escolaridade: Optional[str] = None
+    status_lotacao: str
+    unidade_id: Optional[str] = None
+    unidade_nome: Optional[str] = None
+    habilidades: List[HabilidadeOut] = Field(default_factory=list)
+    origem: str
+    unidades_candidatas: List[UnidadeCandidataOut] = Field(default_factory=list)
+
+
+class ServidoresDisponiveisOut(BaseModel):
+    items: List[ServidorDisponivelOut] = Field(default_factory=list)
+
+
+class ServidoresLotadosOut(BaseModel):
+    items: List[ServidorBasicoOut] = Field(default_factory=list)

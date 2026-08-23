@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { Unidade, Categoria } from '@/types';
+import { Unidade, Categoria, Habilidade, PerfilVaga } from '@/types';
 import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import { useEscape } from '@/lib/useEscape';
-import { Building2, Plus, Search, CheckCircle2, AlertCircle, Users, Scale, ArrowUpRight, ArrowDownRight, BarChart } from 'lucide-react';
+import { Building2, Plus, Search, CheckCircle2, AlertCircle, Users, Scale, ArrowUpRight, ArrowDownRight, BarChart, Briefcase, Trash2 } from 'lucide-react';
 import CategoriaMgiField from '@/components/CategoriaMgiField';
 
 function formatComposicaoVinculo(composicao?: Unidade['composicao_vinculo']): string {
@@ -44,6 +44,18 @@ export default function UnidadesPage() {
   const [perfil, setPerfil] = useState<ReturnType<typeof getStoredPerfil>>(null);
   const canCreate = canWriteCadastro(perfil);
   useEscape(isModalOpen, () => setIsModalOpen(false));
+
+  const [perfisUnidade, setPerfisUnidade] = useState<Unidade | null>(null);
+  const [perfis, setPerfis] = useState<PerfilVaga[]>([]);
+  const [habilidades, setHabilidades] = useState<Habilidade[]>([]);
+  const [perfisLoading, setPerfisLoading] = useState(false);
+  const [perfilNome, setPerfilNome] = useState('');
+  const [perfilQuantidade, setPerfilQuantidade] = useState('1');
+  const [perfilEscolaridade, setPerfilEscolaridade] = useState<'medio' | 'superior'>('medio');
+  const [perfilHabilidadesIds, setPerfilHabilidadesIds] = useState<string[]>([]);
+  const [novaHabilidade, setNovaHabilidade] = useState('');
+  const [perfisError, setPerfisError] = useState<string | null>(null);
+  useEscape(!!perfisUnidade, () => setPerfisUnidade(null));
 
   const fetchData = async () => {
     try {
@@ -123,6 +135,85 @@ export default function UnidadesPage() {
     const matchesStatus = statusFilter === 'todos' || u.status_dimensionamento === statusFilter;
     return matchesSearch && matchesTipo && matchesStatus;
   });
+
+  const openPerfisModal = async (unidade: Unidade) => {
+    setPerfisUnidade(unidade);
+    setPerfisError(null);
+    setPerfilNome('');
+    setPerfilQuantidade('1');
+    setPerfilEscolaridade('medio');
+    setPerfilHabilidadesIds([]);
+    setNovaHabilidade('');
+    setPerfisLoading(true);
+    try {
+      const [resP, resH] = await Promise.all([
+        apiFetch(`/api/unidades/${unidade.id}/perfis-vaga`),
+        apiFetch('/api/habilidades'),
+      ]);
+      if (resP.ok) setPerfis(await resP.json());
+      if (resH.ok) setHabilidades(await resH.json());
+    } catch {
+      setPerfisError('Não foi possível carregar os perfis de lotação.');
+    } finally {
+      setPerfisLoading(false);
+    }
+  };
+
+  const cadastrarHabilidadeInline = async () => {
+    const nome = novaHabilidade.trim();
+    if (!nome || !canCreate) return;
+    const res = await apiFetch('/api/habilidades', {
+      method: 'POST',
+      headers: jsonAuthHeaders(),
+      body: JSON.stringify({ nome }),
+    });
+    if (!res.ok) return;
+    const created = (await res.json()) as Habilidade;
+    setHabilidades((prev) => [...prev, created].sort((a, b) => a.nome.localeCompare(b.nome)));
+    setPerfilHabilidadesIds((prev) => [...prev, created.id]);
+    setNovaHabilidade('');
+  };
+
+  const salvarPerfilVaga = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!perfisUnidade || !canCreate) return;
+    setPerfisError(null);
+    try {
+      const res = await apiFetch(`/api/unidades/${perfisUnidade.id}/perfis-vaga`, {
+        method: 'POST',
+        headers: jsonAuthHeaders(),
+        body: JSON.stringify({
+          nome_perfil: perfilNome.trim(),
+          quantidade: Number(perfilQuantidade),
+          nivel_escolaridade: perfilEscolaridade,
+          habilidade_ids: perfilHabilidadesIds,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(apiErrorMessage(err, 'Erro ao cadastrar perfil'));
+      }
+      const created = (await res.json()) as PerfilVaga;
+      setPerfis((prev) => [...prev, created]);
+      setPerfilNome('');
+      setPerfilQuantidade('1');
+      setPerfilHabilidadesIds([]);
+    } catch (err: unknown) {
+      setPerfisError(err instanceof Error ? err.message : 'Erro ao cadastrar perfil');
+    }
+  };
+
+  const removerPerfil = async (perfilId: string) => {
+    if (!perfisUnidade || !canCreate) return;
+    const res = await apiFetch(`/api/unidades/${perfisUnidade.id}/perfis-vaga/${perfilId}`, {
+      method: 'DELETE',
+    });
+    if (res.ok) setPerfis((prev) => prev.filter((p) => p.id !== perfilId));
+  };
+
+  const somaQuantidadesPerfis = perfis.reduce((acc, p) => acc + p.quantidade, 0);
+  const lotacaoIdealPerfis = perfisUnidade?.lotacao_ideal ?? 0;
+  const divergeLotacao = perfisUnidade && somaQuantidadesPerfis !== lotacaoIdealPerfis;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -292,8 +383,7 @@ export default function UnidadesPage() {
                     </div>
                   </div>
 
-                  {/* Calculated Capacity & CNJ Indicator */}
-                  <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
+                  <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs text-slate-400 flex items-center gap-1">
                         <BarChart className="w-4 h-4 text-emerald-400" />
@@ -302,14 +392,142 @@ export default function UnidadesPage() {
                       <p className="text-xs text-slate-500 mt-0.5">Metodologia DFT / MGI</p>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-xl font-extrabold text-blue-400">{u.ips ?? 80}</span>
-                      <span className="text-xs text-slate-400 ml-1">IPS</span>
+                    <div className="flex items-center gap-3">
+                      {canCreate && (
+                        <button
+                          type="button"
+                          onClick={() => openPerfisModal(u)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-950/60 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:text-white hover:bg-white/5"
+                        >
+                          <Briefcase className="w-3.5 h-3.5" />
+                          Perfis de Lotação
+                        </button>
+                      )}
+                      <div className="text-right">
+                        <span className="text-xl font-extrabold text-blue-400">{u.ips ?? 80}</span>
+                        <span className="text-xs text-slate-400 ml-1">IPS</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {perfisUnidade && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setPerfisUnidade(null)} role="presentation">
+            <div role="dialog" aria-modal="true" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-blue-400" />
+                Perfis de Lotação — {perfisUnidade.nome}
+              </h2>
+              <p className="text-xs text-slate-400 mb-4">
+                Cadastre os perfis de vaga exigidos nesta unidade (escolaridade e habilidades).
+              </p>
+
+              {divergeLotacao && (
+                <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                  Soma das quantidades cadastradas ({somaQuantidadesPerfis}) difere da lotação ideal ({lotacaoIdealPerfis}). Apenas informativo — não bloqueia o cadastro.
+                </div>
+              )}
+
+              {perfisError && (
+                <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-xs text-rose-300">{perfisError}</div>
+              )}
+
+              {perfisLoading ? (
+                <p className="text-sm text-slate-400">Carregando perfis...</p>
+              ) : (
+                <>
+                  <div className="space-y-2 mb-6">
+                    {perfis.length === 0 && <p className="text-sm text-slate-400">Nenhum perfil cadastrado.</p>}
+                    {perfis.map((p) => (
+                      <div key={p.id} className="rounded-xl border border-white/10 bg-slate-950/50 p-3 flex justify-between gap-3">
+                        <div className="text-xs text-slate-300">
+                          <p className="font-semibold text-white">{p.nome_perfil}</p>
+                          <p>Qtd: {p.quantidade} · Escolaridade: {p.nivel_escolaridade === 'superior' ? 'Superior' : 'Médio'}</p>
+                          <p className="text-slate-400 mt-1">
+                            Habilidades: {p.habilidades.length ? p.habilidades.map((h) => h.nome).join(', ') : 'Nenhuma exigida'}
+                          </p>
+                        </div>
+                        {canCreate && (
+                          <button type="button" onClick={() => removerPerfil(p.id)} className="text-rose-400 hover:text-rose-300 self-start">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {canCreate && (
+                    <form onSubmit={salvarPerfilVaga} className="space-y-3 border-t border-white/10 pt-4">
+                      <p className="text-xs font-bold uppercase text-blue-400">Novo perfil de vaga</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          value={perfilNome}
+                          onChange={(e) => setPerfilNome(e.target.value)}
+                          placeholder="Nome do perfil (ex.: Administrativo)"
+                          required
+                          className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
+                        />
+                        <input
+                          type="number"
+                          min={1}
+                          value={perfilQuantidade}
+                          onChange={(e) => setPerfilQuantidade(e.target.value)}
+                          required
+                          className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
+                        />
+                        <select
+                          value={perfilEscolaridade}
+                          onChange={(e) => setPerfilEscolaridade(e.target.value as 'medio' | 'superior')}
+                          className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white sm:col-span-2"
+                        >
+                          <option value="medio">Ensino Médio</option>
+                          <option value="superior">Ensino Superior</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-2">Habilidades exigidas</p>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {habilidades.map((h) => (
+                            <label key={h.id} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-xs text-slate-300">
+                              <input
+                                type="checkbox"
+                                checked={perfilHabilidadesIds.includes(h.id)}
+                                onChange={(e) => {
+                                  setPerfilHabilidadesIds((prev) =>
+                                    e.target.checked ? [...prev, h.id] : prev.filter((id) => id !== h.id)
+                                  );
+                                }}
+                              />
+                              {h.nome}
+                            </label>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={novaHabilidade}
+                            onChange={(e) => setNovaHabilidade(e.target.value)}
+                            placeholder="Nova habilidade..."
+                            className="flex-1 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
+                          />
+                          <button type="button" onClick={cadastrarHabilidadeInline} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white">
+                            Adicionar
+                          </button>
+                        </div>
+                      </div>
+                      <button type="submit" className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600">
+                        Salvar perfil
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
