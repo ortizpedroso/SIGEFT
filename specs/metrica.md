@@ -1,7 +1,7 @@
 # Spec: Métrica — Dimensionamento da Força de Trabalho (TJRR)
 
 **Arquivo:** `specs/metrica.md`  
-**Versão:** 1.9.1  
+**Versão:** 1.9.2  
 **Data:** 2026-08-24  
 **Comandos:** `/build` implementa; `/review` valida contra este arquivo.
 
@@ -115,7 +115,7 @@ Prefixos: matrícula `DEMO-`, unidades `(Demo)`.
 | Comando | Efeito |
 |---------|--------|
 | `python -m scripts.seed_demo_1000_servidores` | ~1000 servidores, ~150 unidades |
-| `python -m scripts.seed_demo_1000_servidores --preset apresentacao` | **10 unidades**, **100 lotados**, **10 novos** (`sem_lotacao`), **5 liberados** (`disponivel_realocacao`, sem unidade atual) — novos/liberados com escolaridade e habilidades alinhadas a perfis de unidades em déficit para gerar candidatas em `/competencias` |
+| `python -m scripts.seed_demo_1000_servidores --preset apresentacao` | **10 unidades**, **100 lotados**, **10 novos** (`sem_lotacao`), **5 liberados** (`disponivel_realocacao`, sem unidade atual) — cada unidade em déficit tem **habilidades distintas** no perfil; novos/liberados são distribuídos em pacotes diferentes para gerar **candidatas variadas** em `/competencias` |
 | `python -m scripts.seed_demo_1000_servidores --limpar` | Remove dados demo (inclui N:N habilidades antes dos servidores) |
 
 Parâmetros explícitos alternativos: `--total-unidades`, `--lotados`, `--novos`, `--liberados`.
@@ -137,6 +137,7 @@ Parâmetros explícitos alternativos: `--total-unidades`, `--lotados`, `--novos`
 - [x] Etapa 6 — fórmulas/exemplos estruturados, `/capacitacao`
 - [x] Etapa 7 — perfis de vaga, habilidades, matchmaking
 - [x] Etapa 8 — GET servidores + candidatas, UX modo claro, PDF horizontal, CRUD usuários
+- [x] 1.9.2 — seed apresentação com habilidades/competências variadas por unidade candidata
 - [x] 1.9.1 — spec unificada; botão Cancelar em Perfis de Lotação; preset apresentação 100+10+5
 - [x] `pytest` 42+ passando; `tsc --noEmit` e build OK
 

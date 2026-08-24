@@ -92,6 +92,16 @@ def _nome_fake(i: int) -> str:
     return f"{random.choice(NOMES_PROPRIOS)} {random.choice(SOBRENOMES)} (Demo {i:04d})"
 
 
+def _particionar_habilidades(habilidades_map: dict, n_partes: int) -> list[list]:
+    """Divide o catálogo em blocos distintos para perfis de unidades diferentes."""
+    habs = list(habilidades_map.values())
+    random.shuffle(habs)
+    partes: list[list] = [[] for _ in range(max(1, n_partes))]
+    for i, hab in enumerate(habs):
+        partes[i % len(partes)].append(hab)
+    return partes
+
+
 def limpar(db):
     print("Removendo dados de demonstração anteriores...")
     ids_servidores_demo = [
@@ -233,27 +243,60 @@ def seed(
     modo_apresentacao = (
         n_lotados is not None and n_novos is not None and n_liberados is not None
     )
+    pacotes_candidatos: list[dict] = []
+    unidades_deficit_list = sorted(
+        [u for u in unidades if u.id in grupo_deficit],
+        key=lambda item: item.id,
+    )
+    partes_habilidades: list[list] = []
+    if modo_apresentacao and unidades_deficit_list:
+        partes_habilidades = _particionar_habilidades(
+            habilidades_map, len(unidades_deficit_list)
+        )
+
     for u in unidades:
         if not modo_apresentacao and u.id not in grupo_deficit and random.random() >= 0.6:
             continue
         if modo_apresentacao and u.id not in grupo_deficit:
             continue
         n_perfis = 1 if modo_apresentacao else random.randint(1, 2)
+        idx_deficit = (
+            unidades_deficit_list.index(u) if u in unidades_deficit_list else 0
+        )
         for _ in range(n_perfis):
-            nivel = (
-                NivelEscolaridadeEnum.superior
-                if modo_apresentacao
-                else random.choice(list(NivelEscolaridadeEnum))
-            )
+            if modo_apresentacao:
+                nivel = (
+                    NivelEscolaridadeEnum.medio
+                    if idx_deficit % 2 == 0
+                    else NivelEscolaridadeEnum.superior
+                )
+                bloco = partes_habilidades[idx_deficit] if partes_habilidades else []
+                n_habilidades_exigidas = min(3, max(2, len(bloco)))
+                habs_perfil = bloco[:n_habilidades_exigidas] or random.sample(
+                    list(habilidades_map.values()), 2
+                )
+            else:
+                nivel = random.choice(list(NivelEscolaridadeEnum))
+                n_habilidades_exigidas = random.randint(1, 3)
+                habs_perfil = random.sample(
+                    list(habilidades_map.values()), n_habilidades_exigidas
+                )
             perfil = UnidadePerfilVaga(
                 unidade_id=u.id,
                 nome_perfil=random.choice(["Administrativo", "Técnico", "Analista", "Atendimento"]),
                 quantidade=random.randint(1, 4),
                 nivel_escolaridade=nivel,
             )
-            n_habilidades_exigidas = random.randint(2, 3) if modo_apresentacao else random.randint(1, 3)
-            perfil.habilidades = random.sample(list(habilidades_map.values()), n_habilidades_exigidas)
+            perfil.habilidades = habs_perfil
             db.add(perfil)
+            if modo_apresentacao:
+                pacotes_candidatos.append(
+                    {
+                        "unidade_id": u.id,
+                        "nivel_escolaridade": nivel,
+                        "habilidades": habs_perfil[:],
+                    }
+                )
     db.commit()
 
     agora = datetime.now(timezone.utc)
@@ -354,24 +397,19 @@ def seed(
                 idx += 1
 
     if modo_apresentacao:
-        habilidades_lista = list(habilidades_map.values())
-        perfis_deficit = (
-            db.query(UnidadePerfilVaga)
-            .filter(UnidadePerfilVaga.unidade_id.in_(grupo_deficit))
-            .all()
-        )
-        perfil_habs: list = []
-        for p in perfis_deficit:
-            perfil_habs.extend(p.habilidades or [])
-        if not perfil_habs:
-            perfil_habs = habilidades_lista[:3]
-        perfil_habs_unicos = list({h.id: h for h in perfil_habs}.values())
-        nivel_candidato = NivelEscolaridadeEnum.superior
+        if not pacotes_candidatos:
+            habilidades_lista = list(habilidades_map.values())
+            pacotes_candidatos = [
+                {
+                    "unidade_id": u.id,
+                    "nivel_escolaridade": NivelEscolaridadeEnum.superior,
+                    "habilidades": random.sample(habilidades_lista, 2),
+                }
+                for u in unidades_deficit_list or unidades[:3]
+            ]
 
-        n_habs_candidato = min(3, len(perfil_habs_unicos))
-        habs_candidato = random.sample(perfil_habs_unicos, n_habs_candidato)
-
-        for _ in range(n_novos):
+        def _criar_disponivel(status: StatusLotacaoEnum, pacote: dict) -> None:
+            nonlocal idx
             vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
             servidor = Servidor(
                 matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
@@ -380,28 +418,24 @@ def seed(
                 vinculo=vinculo,
                 cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
                 sincronizado_em=agora,
-                status_lotacao=StatusLotacaoEnum.sem_lotacao,
-                nivel_escolaridade=nivel_candidato,
+                status_lotacao=status,
+                nivel_escolaridade=pacote["nivel_escolaridade"],
             )
-            servidor.habilidades = habs_candidato
+            servidor.habilidades = pacote["habilidades"][:]
             db.add(servidor)
             idx += 1
 
-        for _ in range(n_liberados):
-            vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
-            servidor = Servidor(
-                matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
-                nome=_nome_fake(idx),
-                unidade_id=None,
-                vinculo=vinculo,
-                cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
-                sincronizado_em=agora,
-                status_lotacao=StatusLotacaoEnum.disponivel_realocacao,
-                nivel_escolaridade=nivel_candidato,
+        for i in range(n_novos):
+            _criar_disponivel(
+                StatusLotacaoEnum.sem_lotacao,
+                pacotes_candidatos[i % len(pacotes_candidatos)],
             )
-            servidor.habilidades = habs_candidato
-            db.add(servidor)
-            idx += 1
+
+        for i in range(n_liberados):
+            _criar_disponivel(
+                StatusLotacaoEnum.disponivel_realocacao,
+                pacotes_candidatos[(n_novos + i) % len(pacotes_candidatos)],
+            )
     else:
         for _ in range(n_disponiveis):
             vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
