@@ -17,6 +17,11 @@ para o banco certo):
 
     python -m scripts.seed_demo_1000_servidores
 
+Preset enxuto para apresentação (10 unidades, 100 lotados, 10 novos,
+5 liberados — novos/liberados com competências alinhadas a unidades em déficit):
+
+    python -m scripts.seed_demo_1000_servidores --preset apresentacao
+
 Para desfazer (remove só o que este script criou, identificado pelo
 prefixo "DEMO-" nas matrículas e "(Demo)" nos nomes de unidade):
 
@@ -138,8 +143,22 @@ def limpar(db):
     )
 
 
-def seed(db, total_servidores: int = 1000, total_unidades: int = 150):
-    print(f"Semeando ~{total_unidades} unidades e {total_servidores} servidores de demonstração...")
+def seed(
+    db,
+    total_servidores: int = 1000,
+    total_unidades: int = 150,
+    n_lotados: int | None = None,
+    n_novos: int | None = None,
+    n_liberados: int | None = None,
+):
+    if n_lotados is not None and n_novos is not None and n_liberados is not None:
+        total_servidores = n_lotados + n_novos + n_liberados
+        print(
+            f"Semeando {total_unidades} unidades e {total_servidores} servidores "
+            f"({n_lotados} lotados, {n_novos} novos, {n_liberados} sem lotação atual)..."
+        )
+    else:
+        print(f"Semeando ~{total_unidades} unidades e {total_servidores} servidores de demonstração...")
 
     categorias = db.query(Categoria).all()
     if not categorias:
@@ -211,19 +230,28 @@ def seed(db, total_servidores: int = 1000, total_unidades: int = 150):
     grupo_deficit = set(u.id for u in unidades_embaralhadas[:n_deficit])
     grupo_ideal = set(u.id for u in unidades_embaralhadas[n_deficit:n_deficit + n_ideal])
 
+    modo_apresentacao = (
+        n_lotados is not None and n_novos is not None and n_liberados is not None
+    )
     for u in unidades:
-        if u.id not in grupo_deficit and random.random() >= 0.6:
+        if not modo_apresentacao and u.id not in grupo_deficit and random.random() >= 0.6:
             continue
-        n_perfis = random.randint(1, 2)
+        if modo_apresentacao and u.id not in grupo_deficit:
+            continue
+        n_perfis = 1 if modo_apresentacao else random.randint(1, 2)
         for _ in range(n_perfis):
-            nivel = random.choice(list(NivelEscolaridadeEnum))
+            nivel = (
+                NivelEscolaridadeEnum.superior
+                if modo_apresentacao
+                else random.choice(list(NivelEscolaridadeEnum))
+            )
             perfil = UnidadePerfilVaga(
                 unidade_id=u.id,
                 nome_perfil=random.choice(["Administrativo", "Técnico", "Analista", "Atendimento"]),
                 quantidade=random.randint(1, 4),
                 nivel_escolaridade=nivel,
             )
-            n_habilidades_exigidas = random.randint(1, 3)
+            n_habilidades_exigidas = random.randint(2, 3) if modo_apresentacao else random.randint(1, 3)
             perfil.habilidades = random.sample(list(habilidades_map.values()), n_habilidades_exigidas)
             db.add(perfil)
     db.commit()
@@ -253,19 +281,140 @@ def seed(db, total_servidores: int = 1000, total_unidades: int = 150):
     escala = max(0.6, min(1.6, escala_bruta))
     n_disponiveis = total_servidores - n_lotados_alvo
 
-    for u in unidades:
-        qtd = max(0, round(fracoes_por_unidade[u.id] * escala))
-        for _ in range(qtd):
+    if modo_apresentacao:
+        n_lotados_alvo = n_lotados
+        n_disponiveis = n_novos + n_liberados
+        atribuicoes: list[str] = []
+        restantes = n_lotados
+        unidades_deficit = [u for u in unidades if u.id in grupo_deficit]
+        if not unidades_deficit:
+            unidades_deficit = unidades[: max(1, len(unidades) // 3)]
+        for u in unidades_deficit:
+            if restantes <= 0:
+                break
+            dim = dimensionar_unidade(u)
+            qtd = max(1, round(dim["lotacao_ideal"] * random.uniform(0.35, 0.55)))
+            qtd = min(qtd, restantes)
+            atribuicoes.extend([u.id] * qtd)
+            restantes -= qtd
+        unidades_resto = [u for u in unidades if u.id not in grupo_deficit]
+        if not unidades_resto:
+            unidades_resto = unidades
+        i = 0
+        while restantes > 0:
+            atribuicoes.append(unidades_resto[i % len(unidades_resto)].id)
+            restantes -= 1
+            i += 1
+        random.shuffle(atribuicoes)
+        for unidade_id in atribuicoes:
             vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
-            tem_perfil = random.random() < 0.6
             servidor = Servidor(
                 matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
                 nome=_nome_fake(idx),
-                unidade_id=u.id,
+                unidade_id=unidade_id,
                 vinculo=vinculo,
                 cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
                 sincronizado_em=agora,
                 status_lotacao=StatusLotacaoEnum.lotado,
+                nivel_escolaridade=random.choice(list(NivelEscolaridadeEnum)),
+            )
+            servidor.habilidades = random.sample(
+                list(habilidades_map.values()), random.randint(1, 3)
+            )
+            db.add(servidor)
+            idx += 1
+    else:
+        if n_lotados is not None and n_novos is not None and n_liberados is not None:
+            n_lotados_alvo = n_lotados
+            n_disponiveis = n_novos + n_liberados
+            escala = 1.0
+            if n_lotados_total > 0 and n_lotados > 0:
+                escala = n_lotados / n_lotados_total
+
+        for u in unidades:
+            qtd = max(0, round(fracoes_por_unidade[u.id] * escala))
+            for _ in range(qtd):
+                vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
+                tem_perfil = random.random() < 0.6
+                servidor = Servidor(
+                    matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
+                    nome=_nome_fake(idx),
+                    unidade_id=u.id,
+                    vinculo=vinculo,
+                    cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
+                    sincronizado_em=agora,
+                    status_lotacao=StatusLotacaoEnum.lotado,
+                    nivel_escolaridade=random.choice(list(NivelEscolaridadeEnum)) if tem_perfil else None,
+                )
+                if tem_perfil:
+                    servidor.habilidades = random.sample(
+                        list(habilidades_map.values()), random.randint(1, 3)
+                    )
+                db.add(servidor)
+                idx += 1
+
+    if modo_apresentacao:
+        habilidades_lista = list(habilidades_map.values())
+        perfis_deficit = (
+            db.query(UnidadePerfilVaga)
+            .filter(UnidadePerfilVaga.unidade_id.in_(grupo_deficit))
+            .all()
+        )
+        perfil_habs: list = []
+        for p in perfis_deficit:
+            perfil_habs.extend(p.habilidades or [])
+        if not perfil_habs:
+            perfil_habs = habilidades_lista[:3]
+        perfil_habs_unicos = list({h.id: h for h in perfil_habs}.values())
+        nivel_candidato = NivelEscolaridadeEnum.superior
+
+        n_habs_candidato = min(3, len(perfil_habs_unicos))
+        habs_candidato = random.sample(perfil_habs_unicos, n_habs_candidato)
+
+        for _ in range(n_novos):
+            vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
+            servidor = Servidor(
+                matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
+                nome=_nome_fake(idx),
+                unidade_id=None,
+                vinculo=vinculo,
+                cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
+                sincronizado_em=agora,
+                status_lotacao=StatusLotacaoEnum.sem_lotacao,
+                nivel_escolaridade=nivel_candidato,
+            )
+            servidor.habilidades = habs_candidato
+            db.add(servidor)
+            idx += 1
+
+        for _ in range(n_liberados):
+            vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
+            servidor = Servidor(
+                matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
+                nome=_nome_fake(idx),
+                unidade_id=None,
+                vinculo=vinculo,
+                cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
+                sincronizado_em=agora,
+                status_lotacao=StatusLotacaoEnum.disponivel_realocacao,
+                nivel_escolaridade=nivel_candidato,
+            )
+            servidor.habilidades = habs_candidato
+            db.add(servidor)
+            idx += 1
+    else:
+        for _ in range(n_disponiveis):
+            vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
+            tem_perfil = random.random() < 0.6
+            status = StatusLotacaoEnum.sem_lotacao if random.random() < 0.5 else StatusLotacaoEnum.disponivel_realocacao
+            servidor = Servidor(
+                matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
+                nome=_nome_fake(idx),
+                unidade_id=random.choice(unidades).id if status == StatusLotacaoEnum.disponivel_realocacao else None,
+                vinculo=vinculo,
+                cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
+                sincronizado_em=agora,
+                status_lotacao=status,
                 nivel_escolaridade=random.choice(list(NivelEscolaridadeEnum)) if tem_perfil else None,
             )
             if tem_perfil:
@@ -275,42 +424,53 @@ def seed(db, total_servidores: int = 1000, total_unidades: int = 150):
             db.add(servidor)
             idx += 1
 
-    for _ in range(n_disponiveis):
-        vinculo = random.choices(vinculos, weights=pesos_vinculo, k=1)[0]
-        tem_perfil = random.random() < 0.6
-        status = StatusLotacaoEnum.sem_lotacao if random.random() < 0.5 else StatusLotacaoEnum.disponivel_realocacao
-        servidor = Servidor(
-            matricula=f"{PREFIXO_MATRICULA}{idx:04d}",
-            nome=_nome_fake(idx),
-            unidade_id=random.choice(unidades).id if status == StatusLotacaoEnum.disponivel_realocacao else None,
-            vinculo=vinculo,
-            cargo_nome=random.choice(["Técnico Judiciário", "Analista Judiciário", "Auxiliar Administrativo"]),
-            sincronizado_em=agora,
-            status_lotacao=status,
-            nivel_escolaridade=random.choice(list(NivelEscolaridadeEnum)) if tem_perfil else None,
-        )
-        if tem_perfil:
-            servidor.habilidades = random.sample(
-                list(habilidades_map.values()), random.randint(1, 3)
-            )
-        db.add(servidor)
-        idx += 1
-
     db.commit()
-    print(f"Concluído: {len(unidades)} unidades, {idx - 1} servidores ({n_disponiveis} disponíveis para realocação/novos).")
+    if modo_apresentacao:
+        print(
+            f"Concluído: {len(unidades)} unidades, {idx - 1} servidores "
+            f"({n_lotados} lotados, {n_novos} novos, {n_liberados} sem lotação atual)."
+        )
+    else:
+        print(f"Concluído: {len(unidades)} unidades, {idx - 1} servidores ({n_disponiveis} disponíveis para realocação/novos).")
+
+
+PRESET_APRESENTACAO = {
+    "total_unidades": 10,
+    "n_lotados": 100,
+    "n_novos": 10,
+    "n_liberados": 5,
+}
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--limpar", action="store_true", help="Remove os dados de demonstração em vez de criar")
+    parser.add_argument(
+        "--preset",
+        choices=["apresentacao"],
+        help="Conjuntos pré-definidos de massa de dados para demo/apresentação",
+    )
     parser.add_argument("--total-servidores", type=int, default=1000)
     parser.add_argument("--total-unidades", type=int, default=150)
+    parser.add_argument("--lotados", type=int, help="Quantidade exata de servidores lotados (modo explícito)")
+    parser.add_argument("--novos", type=int, help="Servidores novos sem lotação (sem_lotacao)")
+    parser.add_argument("--liberados", type=int, help="Servidores liberados para realocação (sem unidade atual)")
     args = parser.parse_args()
 
     db = SessionLocal()
     try:
         if args.limpar:
             limpar(db)
+        elif args.preset == "apresentacao":
+            seed(db, **PRESET_APRESENTACAO)
+        elif args.lotados is not None and args.novos is not None and args.liberados is not None:
+            seed(
+                db,
+                total_unidades=args.total_unidades,
+                n_lotados=args.lotados,
+                n_novos=args.novos,
+                n_liberados=args.liberados,
+            )
         else:
             seed(db, total_servidores=args.total_servidores, total_unidades=args.total_unidades)
     finally:
