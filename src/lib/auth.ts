@@ -30,7 +30,7 @@ export async function apiFetch(input: string, init?: RequestInit): Promise<Respo
   return res;
 }
 
-export type PerfilDFT = 'gestor' | 'executor' | 'apoio_exclusivo';
+export type PerfilDFT = 'gestor' | 'executor' | 'apoio_exclusivo' | 'rh';
 
 export function getStoredPerfil(): PerfilDFT | null {
   if (typeof window === 'undefined') return null;
@@ -38,7 +38,7 @@ export function getStoredPerfil(): PerfilDFT | null {
     const raw = localStorage.getItem('metrica_user');
     if (!raw) return null;
     const perfil = JSON.parse(raw).perfil_dft;
-    if (perfil === 'gestor' || perfil === 'executor' || perfil === 'apoio_exclusivo') {
+    if (perfil === 'gestor' || perfil === 'executor' || perfil === 'apoio_exclusivo' || perfil === 'rh') {
       return perfil;
     }
     return null;
@@ -53,4 +53,8 @@ export function canWriteCadastro(perfil: PerfilDFT | null): boolean {
 
 export function canWriteEsforco(perfil: PerfilDFT | null): boolean {
   return perfil === 'gestor' || perfil === 'executor';
+}
+
+export function canManageCompetencias(perfil: PerfilDFT | null): boolean {
+  return perfil === 'rh';
 }

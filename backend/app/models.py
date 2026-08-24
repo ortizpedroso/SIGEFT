@@ -19,6 +19,7 @@ class PerfilDFTEnum(str, enum.Enum):
     gestor = "gestor"
     executor = "executor"
     apoio_exclusivo = "apoio_exclusivo"
+    rh = "rh"
 
 
 class VinculoServidorEnum(str, enum.Enum):

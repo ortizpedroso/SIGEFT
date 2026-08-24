@@ -13,7 +13,6 @@ import {
   ServidoresDisponiveisResponse,
   ServidorDisponivel,
   ServidorBasico,
-  Habilidade,
 } from '@/types';
 import { jsonAuthHeaders, apiErrorMessage, apiFetch, getStoredPerfil, canWriteCadastro } from '@/lib/auth';
 import {
@@ -30,7 +29,6 @@ import {
   ChevronUp,
   Info,
   Users,
-  Save,
   Search,
 } from 'lucide-react';
 import CategoriaMgiField from '@/components/CategoriaMgiField';
@@ -227,11 +225,9 @@ export default function SimulacaoPage() {
 
   const [disponiveis, setDisponiveis] = useState<ServidorDisponivel[]>([]);
   const [disponiveisLoading, setDisponiveisLoading] = useState(false);
-  const [habilidades, setHabilidades] = useState<Habilidade[]>([]);
   const [buscaLotados, setBuscaLotados] = useState('');
   const [lotados, setLotados] = useState<ServidorBasico[]>([]);
   const [lotadosLoading, setLotadosLoading] = useState(false);
-  const [editDrafts, setEditDrafts] = useState<Record<string, { nivel: string; habilidades: string[] }>>({});
   const [disponiveisMsg, setDisponiveisMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -252,10 +248,6 @@ export default function SimulacaoPage() {
       .catch(() => console.error('Erro ao carregar unidades'));
 
     loadDisponiveis();
-    apiFetch('/api/habilidades')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: Habilidade[]) => setHabilidades(data))
-      .catch(() => undefined);
   }, []);
 
   const loadDisponiveis = async () => {
@@ -265,14 +257,6 @@ export default function SimulacaoPage() {
       if (res.ok) {
         const data = (await res.json()) as ServidoresDisponiveisResponse;
         setDisponiveis(data.items || []);
-        const drafts: Record<string, { nivel: string; habilidades: string[] }> = {};
-        (data.items || []).forEach((s) => {
-          drafts[s.id] = {
-            nivel: s.nivel_escolaridade || '',
-            habilidades: s.habilidades.map((h) => h.id),
-          };
-        });
-        setEditDrafts(drafts);
       }
     } catch {
       setDisponiveisMsg('Não foi possível carregar servidores disponíveis.');
@@ -291,27 +275,6 @@ export default function SimulacaoPage() {
     } finally {
       setLotadosLoading(false);
     }
-  };
-
-  const salvarServidor = async (servidorId: string) => {
-    if (!canSimulate) return;
-    const draft = editDrafts[servidorId];
-    if (!draft) return;
-    setDisponiveisMsg(null);
-    const res = await apiFetch(`/api/servidores/${servidorId}`, {
-      method: 'PATCH',
-      headers: jsonAuthHeaders(),
-      body: JSON.stringify({
-        nivel_escolaridade: draft.nivel || null,
-        habilidade_ids: draft.habilidades,
-      }),
-    });
-    if (!res.ok) {
-      setDisponiveisMsg('Não foi possível salvar os dados do servidor.');
-      return;
-    }
-    await loadDisponiveis();
-    setDisponiveisMsg('Dados do servidor atualizados.');
   };
 
   const liberarServidor = async (servidorId: string) => {
@@ -743,7 +706,7 @@ export default function SimulacaoPage() {
             Servidores Disponíveis
           </h2>
           <p className="text-sm text-slate-400 mt-1">
-            Sugestão de realocação por compatibilidade de escolaridade e habilidades (MVP — vaga aberta aproximada por déficit da unidade).
+            Sugestão de realocação por compatibilidade de escolaridade e habilidades (MVP — vaga aberta aproximada por déficit da unidade). Escolaridade e habilidades são cadastradas pela área de Recursos Humanos (tela Competências).
           </p>
         </div>
 
@@ -787,7 +750,6 @@ export default function SimulacaoPage() {
             <p className="text-sm text-slate-400">Nenhum servidor com status sem lotação ou liberado para realocação.</p>
           )}
           {disponiveis.map((s) => {
-            const draft = editDrafts[s.id] || { nivel: '', habilidades: [] };
             return (
               <div key={s.id} className="rounded-xl border border-white/10 bg-slate-950/50 p-4 space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -798,48 +760,32 @@ export default function SimulacaoPage() {
                       {s.origem === 'liberado' ? 'Liberado' : 'Novo'}
                     </span>
                   </div>
-                  {canSimulate && (
-                    <button type="button" onClick={() => salvarServidor(s.id)} className="inline-flex items-center gap-1 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600">
-                      <Save className="w-3.5 h-3.5" />
-                      Salvar dados
-                    </button>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="text-slate-400 uppercase font-semibold text-[10px]">Escolaridade</label>
-                    <select
-                      value={draft.nivel}
-                      disabled={!canSimulate}
-                      onChange={(e) => setEditDrafts((prev) => ({ ...prev, [s.id]: { ...draft, nivel: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-60"
-                    >
-                      <option value="">Não informado</option>
-                      <option value="medio">Ensino Médio</option>
-                      <option value="superior">Ensino Superior</option>
-                    </select>
+                    <p className="text-slate-400 uppercase font-semibold text-[10px]">Escolaridade</p>
+                    <p className="mt-1 text-slate-200">
+                      {s.nivel_escolaridade === 'medio' && 'Ensino Médio'}
+                      {s.nivel_escolaridade === 'superior' && 'Ensino Superior'}
+                      {!s.nivel_escolaridade && (
+                        <span className="text-slate-500 italic">Aguardando cadastro pela RH</span>
+                      )}
+                    </p>
                   </div>
                   <div>
                     <p className="text-slate-400 uppercase font-semibold text-[10px] mb-1">Habilidades</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {habilidades.map((h) => (
-                        <label key={h.id} className="inline-flex items-center gap-1 rounded border border-white/10 px-2 py-0.5 text-slate-300">
-                          <input
-                            type="checkbox"
-                            disabled={!canSimulate}
-                            checked={draft.habilidades.includes(h.id)}
-                            onChange={(e) => {
-                              const next = e.target.checked
-                                ? [...draft.habilidades, h.id]
-                                : draft.habilidades.filter((id) => id !== h.id);
-                              setEditDrafts((prev) => ({ ...prev, [s.id]: { ...draft, habilidades: next } }));
-                            }}
-                          />
-                          {h.nome}
-                        </label>
-                      ))}
-                    </div>
+                    {s.habilidades.length === 0 ? (
+                      <p className="text-slate-500 italic">Aguardando cadastro pela RH</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {s.habilidades.map((h) => (
+                          <span key={h.id} className="inline-block rounded border border-white/10 px-2 py-0.5 text-slate-300">
+                            {h.nome}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

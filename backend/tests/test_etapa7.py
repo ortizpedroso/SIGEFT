@@ -142,19 +142,39 @@ def test_servidores_disponiveis_sugere_unidade_deficit(client: TestClient, db: S
 
 def test_patch_servidor_e_liberar(client: TestClient, db: Session):
     gestor, _, _, hab1 = _seed(db)
-    headers = _auth_header(gestor.id)
+    headers_gestor = _auth_header(gestor.id)
+
+    rh = Usuario(
+        email="rh.etapa7@tjrr.jus.br",
+        senha_hash=get_password_hash("x"),
+        perfil_dft=PerfilDFTEnum.rh,
+        unidade_id=gestor.unidade_id,
+    )
+    db.add(rh)
+    db.commit()
+    headers_rh = _auth_header(rh.id)
 
     lotado = db.query(Servidor).filter(Servidor.matricula == "LOT-0").first()
     assert lotado is not None
 
-    res_patch = client.patch(
+    # Gestor não pode mais editar competências - isso é exclusivo do RH.
+    res_patch_gestor = client.patch(
         f"/api/servidores/{lotado.id}",
-        headers=headers,
+        headers=headers_gestor,
         json={"nivel_escolaridade": "medio", "habilidade_ids": [hab1.id]},
     )
-    assert res_patch.status_code == 200
+    assert res_patch_gestor.status_code == 403
 
-    res_lib = client.post(f"/api/servidores/{lotado.id}/liberar-realocacao", headers=headers)
+    # RH pode editar competências normalmente.
+    res_patch_rh = client.patch(
+        f"/api/servidores/{lotado.id}",
+        headers=headers_rh,
+        json={"nivel_escolaridade": "medio", "habilidade_ids": [hab1.id]},
+    )
+    assert res_patch_rh.status_code == 200
+
+    # Liberar para realocação continua sendo função do gestor (não do RH).
+    res_lib = client.post(f"/api/servidores/{lotado.id}/liberar-realocacao", headers=headers_gestor)
     assert res_lib.status_code == 200
     assert res_lib.json()["status_lotacao"] == "disponivel_realocacao"
 

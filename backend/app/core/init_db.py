@@ -76,6 +76,7 @@ def init_db():
             (admin_email, admin_password, PerfilDFTEnum.gestor, unidade_admin),
             ("ti.executor@tjrr.jus.br", "Executor@2026!", PerfilDFTEnum.executor, unidade_ti),
             ("apoio@tjrr.jus.br", "Apoio@2026!", PerfilDFTEnum.apoio_exclusivo, unidade_vara),
+            ("rh@tjrr.jus.br", "Rh@2026!", PerfilDFTEnum.rh, unidade_admin),
         ]
         for email, senha, perfil, unidade in users_seed:
             if unidade and not db.query(Usuario).filter(Usuario.email == email).first():

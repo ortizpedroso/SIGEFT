@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2, GraduationCap } from 'lucide-react';
+import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2, GraduationCap, IdCard } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StoredUser {
@@ -14,14 +14,15 @@ interface StoredUser {
 
 const navItems = [
   { href: '/', label: 'Painel', icon: LayoutDashboard },
-  { href: '/unidades', label: 'Unidades', icon: Building2 },
-  { href: '/entregas', label: 'Entregas', icon: Package },
-  { href: '/esforcos', label: 'Esforços', icon: Users },
-  { href: '/ponderacao', label: 'Ponderação', icon: Sliders },
-  { href: '/simulacao', label: 'Simulação', icon: BarChart3 },
-  { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText },
-  { href: '/integracao', label: 'Integração', icon: Link2 },
+  { href: '/unidades', label: 'Unidades', icon: Building2, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
+  { href: '/entregas', label: 'Entregas', icon: Package, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
+  { href: '/esforcos', label: 'Esforços', icon: Users, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
+  { href: '/ponderacao', label: 'Ponderação', icon: Sliders, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
+  { href: '/simulacao', label: 'Simulação', icon: BarChart3, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
+  { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
+  { href: '/integracao', label: 'Integração', icon: Link2, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
   { href: '/capacitacao', label: 'Capacitação', icon: GraduationCap },
+  { href: '/competencias', label: 'Competências (RH)', icon: IdCard, roles: ['rh'] },
 ];
 
 function NavTip({ label }: { label: string }) {
@@ -72,6 +73,10 @@ export default function Navbar() {
         : 'text-white hover:bg-amber-300 hover:text-slate-950'
     }`;
 
+  const visibleNavItems = navItems.filter(
+    (item) => !item.roles || (user && item.roles.includes(user.perfil_dft))
+  );
+
   return (
     <header className="site-header sticky top-0 z-50 overflow-visible border-b border-blue-500/25 bg-[#0b1736] text-white shadow-lg shadow-blue-950/40">
       <div className="mx-auto flex max-w-[96rem] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
@@ -91,7 +96,7 @@ export default function Navbar() {
           className="hidden min-w-0 flex-1 flex-wrap items-center justify-start gap-2 md:flex"
           aria-label="Principal"
         >
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
@@ -164,7 +169,7 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div id="menu-navegacao-mobile" className="border-t border-blue-500/20 bg-[#071026] px-4 py-3 md:hidden">
           <div className="grid grid-cols-1 gap-1">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (

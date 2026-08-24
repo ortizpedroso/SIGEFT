@@ -53,6 +53,33 @@ def _replace_habilidades(db: Session, servidor: Servidor, habilidade_ids: list[s
     servidor.habilidades = habilidades
 
 
+@router.get("/servidores", response_model=list[ServidorBasicoOut])
+def listar_servidores(
+    busca: str = Query("", max_length=200),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(require_roles("rh", "gestor")),
+):
+    """Listagem geral de servidores, para a tela de Cadastro de Competências (RH).
+    Leitura liberada também para gestor (oversight), mas a edição
+    (PATCH /servidores/{id}) é exclusiva do perfil RH."""
+    query = db.query(Servidor).options(joinedload(Servidor.habilidades), joinedload(Servidor.unidade))
+    termo = busca.strip()
+    if termo:
+        like = f"%{termo}%"
+        query = query.filter(
+            (Servidor.nome.ilike(like)) | (Servidor.matricula.ilike(like))
+        )
+    servidores = (
+        query.order_by(Servidor.nome)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return [_to_basico(s) for s in servidores]
+
+
 @router.get("/servidores/lotados", response_model=list[ServidorBasicoOut])
 def listar_servidores_lotados(
     busca: str = Query("", max_length=200),
@@ -82,7 +109,7 @@ def atualizar_servidor(
     servidor_id: str,
     payload: ServidorUpdate,
     db: Session = Depends(get_db),
-    _user: Usuario = Depends(require_roles("gestor")),
+    _user: Usuario = Depends(require_roles("rh")),
 ):
     servidor = _load_servidor(db, servidor_id)
 
