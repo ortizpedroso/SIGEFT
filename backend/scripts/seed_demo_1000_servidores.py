@@ -39,6 +39,8 @@ from app.models import (
     Habilidade,
     UnidadePerfilVaga,
     Entrega,
+    servidor_habilidade,
+    perfil_vaga_habilidade,
 )
 
 random.seed(42)  # reprodutível — mesma massa de dados toda vez que rodar
@@ -87,18 +89,53 @@ def _nome_fake(i: int) -> str:
 
 def limpar(db):
     print("Removendo dados de demonstração anteriores...")
-    n_serv = db.query(Servidor).filter(Servidor.matricula.like(f"{PREFIXO_MATRICULA}%")).delete(synchronize_session=False)
+    ids_servidores_demo = [
+        row[0]
+        for row in db.query(Servidor.id).filter(Servidor.matricula.like(f"{PREFIXO_MATRICULA}%")).all()
+    ]
+    n_serv_hab = 0
+    if ids_servidores_demo:
+        n_serv_hab = db.execute(
+            servidor_habilidade.delete().where(
+                servidor_habilidade.c.servidor_id.in_(ids_servidores_demo)
+            )
+        ).rowcount
+    n_serv = db.query(Servidor).filter(Servidor.matricula.like(f"{PREFIXO_MATRICULA}%")).delete(
+        synchronize_session=False
+    )
+
     unidades_demo = db.query(Unidade).filter(Unidade.nome.like(f"%{PREFIXO_UNIDADE}%")).all()
     ids_unidades_demo = [u.id for u in unidades_demo]
     n_perfis = 0
     n_entregas = 0
+    n_perfil_hab = 0
     if ids_unidades_demo:
-        n_perfis = db.query(UnidadePerfilVaga).filter(UnidadePerfilVaga.unidade_id.in_(ids_unidades_demo)).delete(synchronize_session=False)
-        n_entregas = db.query(Entrega).filter(Entrega.unidade_id.in_(ids_unidades_demo)).delete(synchronize_session=False)
+        ids_perfis_demo = [
+            row[0]
+            for row in db.query(UnidadePerfilVaga.id)
+            .filter(UnidadePerfilVaga.unidade_id.in_(ids_unidades_demo))
+            .all()
+        ]
+        if ids_perfis_demo:
+            n_perfil_hab = db.execute(
+                perfil_vaga_habilidade.delete().where(
+                    perfil_vaga_habilidade.c.perfil_vaga_id.in_(ids_perfis_demo)
+                )
+            ).rowcount
+        n_perfis = db.query(UnidadePerfilVaga).filter(
+            UnidadePerfilVaga.unidade_id.in_(ids_unidades_demo)
+        ).delete(synchronize_session=False)
+        n_entregas = db.query(Entrega).filter(Entrega.unidade_id.in_(ids_unidades_demo)).delete(
+            synchronize_session=False
+        )
         for u in unidades_demo:
             db.delete(u)
     db.commit()
-    print(f"Removidos: {n_serv} servidores, {len(ids_unidades_demo)} unidades, {n_perfis} perfis de vaga, {n_entregas} entregas.")
+    print(
+        f"Removidos: {n_serv} servidores, {n_serv_hab} vínculos servidor-habilidade, "
+        f"{len(ids_unidades_demo)} unidades, {n_perfis} perfis de vaga, "
+        f"{n_perfil_hab} vínculos perfil-habilidade, {n_entregas} entregas."
+    )
 
 
 def seed(db, total_servidores: int = 1000, total_unidades: int = 150):
