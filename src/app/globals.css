@@ -150,8 +150,64 @@ html.light .bg-slate-900\/90 {
 html.light .bg-slate-950\/50,
 html.light .bg-slate-950\/60,
 html.light .bg-slate-950\/80,
-html.light .bg-slate-950\/90 {
+html.light .bg-slate-950\/90,
+html.light .bg-slate-950\/40 {
   background-color: #e2e8f0 !important;
+}
+html.light main .bg-slate-800,
+html.light main .bg-slate-800\/60 {
+  background-color: #475569 !important;
+  color: #ffffff !important;
+}
+html.light main .hover\:bg-slate-700:hover,
+html.light main .hover\:bg-slate-800:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* Botão secundário legível nos dois temas */
+.btn-secondary {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.btn-secondary:hover {
+  background-color: #334155;
+  color: #ffffff;
+}
+html.light main .btn-secondary {
+  background-color: #475569 !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+html.light main .btn-secondary:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* Histórico / realocação — fundos de tendência no modo claro */
+html.light main .bg-rose-950\/20,
+html.light main .bg-rose-950\/30 {
+  background-color: #ffe4e6 !important;
+}
+html.light main .bg-emerald-950\/20,
+html.light main .bg-emerald-950\/30 {
+  background-color: #d1fae5 !important;
+}
+html.light main .text-rose-300 {
+  color: #be123c !important;
+}
+html.light main .text-emerald-300,
+html.light main .text-emerald-400 {
+  color: #047857 !important;
+}
+html.light main .text-blue-300,
+html.light main .text-blue-400 {
+  color: #1d4ed8 !important;
+}
+html.light main .text-amber-200,
+html.light main .text-amber-300 {
+  color: #b45309 !important;
 }
 
 /* Integração: selos OK/Problema e mensagens legíveis nos dois temas */

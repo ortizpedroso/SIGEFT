@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import case
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.security import get_current_user, require_roles
+from app.core.security import require_roles
 from app.database import get_db
 from app.models import (
     Habilidade,
@@ -10,13 +11,23 @@ from app.models import (
     StatusLotacaoEnum,
     Usuario,
 )
-from app.schemas import ServidorBasicoOut, ServidorUpdate
-from app.services.compatibilidade import enum_value
+from app.schemas import ServidorBasicoOut, ServidorUpdate, UnidadeCandidataOut
+from app.services.compatibilidade import (
+    _load_unidades_candidatas,
+    enum_value,
+    montar_servidor_disponivel,
+)
 
 router = APIRouter()
 
 
-def _to_basico(servidor: Servidor) -> ServidorBasicoOut:
+def _to_basico(
+    servidor: Servidor,
+    unidades_candidatas: list[dict] | None = None,
+) -> ServidorBasicoOut:
+    candidatas_out: list[UnidadeCandidataOut] = []
+    if unidades_candidatas:
+        candidatas_out = [UnidadeCandidataOut(**item) for item in unidades_candidatas]
     return ServidorBasicoOut(
         id=servidor.id,
         matricula=servidor.matricula,
@@ -28,6 +39,7 @@ def _to_basico(servidor: Servidor) -> ServidorBasicoOut:
         unidade_id=servidor.unidade_id,
         unidade_nome=servidor.unidade.nome if servidor.unidade else None,
         habilidades=[{"id": h.id, "nome": h.nome} for h in (servidor.habilidades or [])],
+        unidades_candidatas=candidatas_out,
     )
 
 
@@ -53,31 +65,68 @@ def _replace_habilidades(db: Session, servidor: Servidor, habilidade_ids: list[s
     servidor.habilidades = habilidades
 
 
+def _apply_status_filter(query, status: str | None):
+    if not status:
+        return query
+    if status == "disponiveis":
+        return query.filter(
+            Servidor.status_lotacao.in_(
+                [StatusLotacaoEnum.sem_lotacao, StatusLotacaoEnum.disponivel_realocacao]
+            )
+        )
+    valid = {item.value for item in StatusLotacaoEnum}
+    if status not in valid:
+        raise HTTPException(
+            status_code=400,
+            detail="status deve ser lotado, sem_lotacao, disponivel_realocacao ou disponiveis.",
+        )
+    return query.filter(Servidor.status_lotacao == StatusLotacaoEnum(status))
+
+
 @router.get("/servidores", response_model=list[ServidorBasicoOut])
 def listar_servidores(
     busca: str = Query("", max_length=200),
+    status: str | None = Query(None),
+    incluir_candidatas: bool = Query(False),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     _user: Usuario = Depends(require_roles("rh", "gestor")),
 ):
     """Listagem geral de servidores, para a tela de Cadastro de Competências (RH).
-    Leitura liberada também para gestor (oversight), mas a edição
-    (PATCH /servidores/{id}) é exclusiva do perfil RH."""
+    Use status=disponiveis para novos/liberados; incluir_candidatas=true anexa unidades compatíveis."""
     query = db.query(Servidor).options(joinedload(Servidor.habilidades), joinedload(Servidor.unidade))
+    query = _apply_status_filter(query, status)
     termo = busca.strip()
     if termo:
         like = f"%{termo}%"
         query = query.filter(
             (Servidor.nome.ilike(like)) | (Servidor.matricula.ilike(like))
         )
-    servidores = (
-        query.order_by(Servidor.nome)
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
-    return [_to_basico(s) for s in servidores]
+    if status == "disponiveis":
+        query = query.order_by(
+            case(
+                (Servidor.status_lotacao == StatusLotacaoEnum.sem_lotacao, 0),
+                (Servidor.status_lotacao == StatusLotacaoEnum.disponivel_realocacao, 1),
+                else_=2,
+            ),
+            Servidor.nome,
+        )
+    else:
+        query = query.order_by(Servidor.nome)
+
+    servidores = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    unidades_cache = _load_unidades_candidatas(db) if incluir_candidatas else None
+    elegiveis = {StatusLotacaoEnum.sem_lotacao, StatusLotacaoEnum.disponivel_realocacao}
+    resultado: list[ServidorBasicoOut] = []
+    for servidor in servidores:
+        candidatas: list[dict] | None = None
+        if incluir_candidatas and servidor.status_lotacao in elegiveis:
+            montado = montar_servidor_disponivel(db, servidor, unidades_cache)
+            candidatas = montado["unidades_candidatas"]
+        resultado.append(_to_basico(servidor, candidatas))
+    return resultado
 
 
 @router.get("/servidores/lotados", response_model=list[ServidorBasicoOut])

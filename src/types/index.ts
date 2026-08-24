@@ -1,6 +1,6 @@
 export type TipoUnidade = 'apoio_direto' | 'apoio_indireto';
 
-export type PerfilDFT = 'gestor' | 'executor' | 'apoio_exclusivo';
+export type PerfilDFT = 'gestor' | 'executor' | 'apoio_exclusivo' | 'rh';
 
 export interface Categoria {
   id: string;
@@ -251,4 +251,5 @@ export interface ServidorBasico {
   unidade_id: string | null;
   unidade_nome: string | null;
   habilidades: Habilidade[];
+  unidades_candidatas?: UnidadeCandidata[];
 }

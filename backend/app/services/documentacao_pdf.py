@@ -57,14 +57,55 @@ def _pdf_write_block(
     height: int,
     text: str,
     align: str | None = None,
+    width: float | None = None,
 ) -> None:
     """Escreve parágrafo garantindo retorno à margem esquerda (evita erro fpdf2)."""
     pdf.set_x(pdf.l_margin)
     kwargs: dict = {"new_x": XPos.LMARGIN, "new_y": YPos.NEXT}
     if align:
-        pdf.multi_cell(0, height, text, align=align, **kwargs)
+        pdf.multi_cell(width or 0, height, text, align=align, **kwargs)
     else:
-        pdf.multi_cell(0, height, text, **kwargs)
+        pdf.multi_cell(width or 0, height, text, **kwargs)
+
+
+def _pdf_formula_horizontal(
+    pdf: MetodologiaPDF,
+    titulo: str,
+    explicacao: str,
+    linhas: list,
+    title_family: tuple,
+    title_style: str,
+    body_family: tuple,
+    body_style: str,
+    mono_family: tuple,
+    mono_style: str,
+) -> None:
+    """Layout horizontal: explicação à esquerda, fórmula monoespaçada à direita."""
+    usable = pdf.w - pdf.l_margin - pdf.r_margin
+    col_left = usable * 0.48
+    col_right = usable * 0.48
+    col_gap = usable * 0.04
+    x_right = pdf.l_margin + col_left + col_gap
+    y_start = pdf.get_y()
+
+    pdf.set_font(title_family, title_style, 10)
+    pdf.set_x(pdf.l_margin)
+    pdf.multi_cell(col_left, 5, titulo, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font(body_family, body_style, 10)
+    pdf.set_x(pdf.l_margin)
+    pdf.multi_cell(col_left, 5, explicacao, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    y_left_end = pdf.get_y()
+
+    pdf.set_font(mono_family, mono_style, 9)
+    y_right = y_start
+    for linha in linhas:
+        prepared = _pdf_mono_line(str(linha))
+        for sublinha in prepared.split("\n"):
+            pdf.set_xy(x_right, y_right)
+            pdf.multi_cell(col_right, 4, sublinha, new_x=XPos.RIGHT, new_y=YPos.NEXT)
+            y_right = pdf.get_y()
+
+    pdf.set_y(max(y_left_end, y_right) + 4)
 
 
 def gerar_pdf_metodologia() -> bytes:
@@ -114,17 +155,18 @@ def gerar_pdf_metodologia() -> bytes:
             titulo = str(formula.get("titulo", ""))
             explicacao = str(formula.get("explicacao", ""))
             linhas = formula.get("formula", [])
-            pdf.set_font(title_family, title_style, 10)
-            _pdf_write_block(pdf, 5, titulo)
-            pdf.ln(1)
-            pdf.set_font(body_family, body_style, 10)
-            _pdf_write_block(pdf, 5, explicacao)
-            pdf.ln(1)
-            pdf.set_font(mono_family, mono_style, 9)
-            for linha in linhas:
-                prepared = _pdf_mono_line(str(linha))
-                for sublinha in prepared.split("\n"):
-                    _pdf_write_block(pdf, 5, sublinha)
+            _pdf_formula_horizontal(
+                pdf,
+                titulo,
+                explicacao,
+                linhas,
+                title_family,
+                title_style,
+                body_family,
+                body_style,
+                mono_family,
+                mono_style,
+            )
             pdf.ln(2)
 
         for exemplo in section.get("exemplos", []):

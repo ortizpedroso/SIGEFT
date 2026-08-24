@@ -50,7 +50,20 @@ function rowTrendClass(antes: number, depois: number) {
   const absDepois = Math.abs(depois);
   if (absDepois > absAntes) return 'border-l-4 border-l-rose-500 bg-rose-950/20';
   if (absDepois < absAntes) return 'border-l-4 border-l-emerald-500 bg-emerald-950/20';
-  return 'border-l-4 border-l-slate-600';
+  return 'border-l-4 border-l-slate-600 bg-slate-950/40';
+}
+
+function historicoTrendClass(statusAntes: string, statusDepois: string) {
+  const rank = (s: string) => {
+    if (s === 'deficit') return -1;
+    if (s === 'ideal') return 0;
+    return 1;
+  };
+  const a = rank(statusAntes);
+  const d = rank(statusDepois);
+  if (d < a) return 'border-l-4 border-l-emerald-500 bg-emerald-950/20';
+  if (d > a) return 'border-l-4 border-l-rose-500 bg-rose-950/20';
+  return 'border-l-4 border-l-slate-600 bg-slate-950/40';
 }
 
 function tipoSimulacaoLabel(tipo: string) {
@@ -152,7 +165,13 @@ function renderHistoricoResultado(item: SimulacaoHistoricoItem) {
     return (
       <div className="space-y-3 text-slate-200 leading-relaxed">
         {unidadesAfetadas.map((u, idx) => (
-          <div key={idx} className="rounded-lg border border-white/10 bg-slate-900/40 p-3 space-y-1">
+          <div
+            key={idx}
+            className={`rounded-lg border border-white/10 p-3 space-y-1 ${historicoTrendClass(
+              String(u.status_antes ?? ''),
+              String(u.status_depois ?? '')
+            )}`}
+          >
             <p className="font-bold text-white">{String(u.nome ?? 'Unidade')}</p>
             <p>
               Efetivo: {Number(u.servidores_atuais_antes ?? 0)} → {Number(u.servidores_atuais_depois ?? 0)}
@@ -725,7 +744,7 @@ export default function SimulacaoPage() {
                 placeholder="Buscar por nome ou matrícula..."
                 className="flex-1 min-w-[200px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white"
               />
-              <button type="button" onClick={buscarLotados} className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+              <button type="button" onClick={buscarLotados} className="btn-secondary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold">
                 <Search className="w-4 h-4" />
                 Buscar
               </button>

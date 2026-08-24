@@ -65,6 +65,13 @@ class UsuarioCreate(UsuarioBase):
     senha: str
 
 
+class UsuarioUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    perfil_dft: Optional[str] = None
+    unidade_id: Optional[str] = None
+    senha: Optional[str] = Field(default=None, min_length=6)
+
+
 class UsuarioOut(UsuarioBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -331,6 +338,15 @@ class ServidorUpdate(BaseModel):
     habilidade_ids: Optional[List[str]] = None
 
 
+class UnidadeCandidataOut(BaseModel):
+    unidade_id: str
+    unidade_nome: str
+    score: float
+    em_deficit: bool
+    lotacao_ideal: int
+    servidores_atuais: int
+
+
 class ServidorBasicoOut(BaseModel):
     id: str
     matricula: str
@@ -340,15 +356,7 @@ class ServidorBasicoOut(BaseModel):
     unidade_id: Optional[str] = None
     unidade_nome: Optional[str] = None
     habilidades: List[HabilidadeOut] = Field(default_factory=list)
-
-
-class UnidadeCandidataOut(BaseModel):
-    unidade_id: str
-    unidade_nome: str
-    score: float
-    em_deficit: bool
-    lotacao_ideal: int
-    servidores_atuais: int
+    unidades_candidatas: List[UnidadeCandidataOut] = Field(default_factory=list)
 
 
 class ServidorDisponivelOut(BaseModel):

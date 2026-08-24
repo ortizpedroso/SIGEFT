@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2, GraduationCap, IdCard } from 'lucide-react';
+import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2, GraduationCap, IdCard, UserCog } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StoredUser {
@@ -23,6 +23,7 @@ const navItems = [
   { href: '/integracao', label: 'Integração', icon: Link2, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
   { href: '/capacitacao', label: 'Capacitação', icon: GraduationCap },
   { href: '/competencias', label: 'Competências (RH)', icon: IdCard, roles: ['rh'] },
+  { href: '/usuarios', label: 'Usuários', icon: UserCog, roles: ['gestor'] },
 ];
 
 function NavTip({ label }: { label: string }) {
