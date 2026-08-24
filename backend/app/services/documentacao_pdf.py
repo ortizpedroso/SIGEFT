@@ -1,6 +1,5 @@
 """Geração de PDF da metodologia com fpdf2."""
 
-import re
 from io import BytesIO
 from pathlib import Path
 
@@ -12,11 +11,6 @@ from app.services.documentacao_content import get_cover_info, get_documento_sect
 DEJAVU_REGULAR = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
 DEJAVU_BOLD = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 DEJAVU_MONO = Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
-
-
-def _pdf_wrap_text(text: str) -> str:
-    """Insere quebras em tokens longos (URLs/paths) para o fpdf2 conseguir quebrar linhas."""
-    return re.sub(r"/", "/\n", text)
 
 
 class MetodologiaPDF(FPDF):
@@ -102,7 +96,7 @@ def gerar_pdf_metodologia() -> bytes:
 
         for paragraph in section.get("paragraphs", []):
             pdf.set_font(body_family, body_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(f"      {paragraph}"))
+            _pdf_write_block(pdf, 5, f"      {paragraph}")
             pdf.ln(2)
 
         for modulo in section.get("modulos", []):
@@ -110,10 +104,10 @@ def gerar_pdf_metodologia() -> bytes:
             rota = str(modulo.get("rota", ""))
             descricao = str(modulo.get("descricao", ""))
             pdf.set_font(title_family, title_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(f"{titulo} ({rota})"))
+            _pdf_write_block(pdf, 5, f"{titulo} ({rota})")
             pdf.ln(1)
             pdf.set_font(body_family, body_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(descricao))
+            _pdf_write_block(pdf, 5, descricao)
             pdf.ln(2)
 
         for formula in section.get("formulas", []):
@@ -121,10 +115,10 @@ def gerar_pdf_metodologia() -> bytes:
             explicacao = str(formula.get("explicacao", ""))
             linhas = formula.get("formula", [])
             pdf.set_font(title_family, title_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(titulo))
+            _pdf_write_block(pdf, 5, titulo)
             pdf.ln(1)
             pdf.set_font(body_family, body_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(explicacao))
+            _pdf_write_block(pdf, 5, explicacao)
             pdf.ln(1)
             pdf.set_font(mono_family, mono_style, 9)
             for linha in linhas:
@@ -139,16 +133,16 @@ def gerar_pdf_metodologia() -> bytes:
             passos = exemplo.get("passos", [])
             resultado = str(exemplo.get("resultado", ""))
             pdf.set_font(title_family, title_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(titulo))
+            _pdf_write_block(pdf, 5, titulo)
             pdf.ln(1)
             pdf.set_font(body_family, body_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(contexto))
+            _pdf_write_block(pdf, 5, contexto)
             pdf.ln(1)
             for idx, passo in enumerate(passos, start=1):
-                _pdf_write_block(pdf, 5, _pdf_wrap_text(f"{idx}. {passo}"))
+                _pdf_write_block(pdf, 5, f"{idx}. {passo}")
             pdf.ln(1)
             pdf.set_font(title_family, title_style, 10)
-            _pdf_write_block(pdf, 5, _pdf_wrap_text(f"Resultado: {resultado}"))
+            _pdf_write_block(pdf, 5, f"Resultado: {resultado}")
             pdf.ln(2)
 
         pdf.ln(4)
