@@ -37,19 +37,17 @@ class MetodologiaPDF(FPDF):
 
 
 def _pdf_mono_line(text: str) -> str:
-    """Prepara linha monoespaçada para o fpdf2 (substitui símbolos e quebra tokens longos)."""
-    normalized = (
+    """Normaliza símbolos para o fpdf2 (a quebra de linha em si fica a cargo
+    do multi_cell, que já quebra naturalmente dentro da largura da coluna -
+    uma quebra manual adicional aqui deixava o texto excessivamente
+    fragmentado, uma palavra por linha em alguns casos)."""
+    return (
         str(text)
         .replace("×", "x")
         .replace("→", "->")
         .replace("⇒", "=>")
         .replace("Σ", "SUM")
-        .replace("_", "_\n  ")
     )
-    if len(normalized) > 72:
-        for sep in (" = ", " + ", " - ", " x ", " * ", ", ", ") ", " ("):
-            normalized = normalized.replace(sep, f"{sep}\n  ")
-    return normalized
 
 
 def _pdf_write_block(
@@ -102,7 +100,7 @@ def _pdf_formula_horizontal(
         prepared = _pdf_mono_line(str(linha))
         for sublinha in prepared.split("\n"):
             pdf.set_xy(x_right, y_right)
-            pdf.multi_cell(col_right, 4, sublinha, new_x=XPos.RIGHT, new_y=YPos.NEXT)
+            pdf.multi_cell(col_right, 4, sublinha, align="L", new_x=XPos.RIGHT, new_y=YPos.NEXT)
             y_right = pdf.get_y()
 
     pdf.set_y(max(y_left_end, y_right) + 4)
