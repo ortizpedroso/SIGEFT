@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2, GraduationCap, IdCard, UserCog } from 'lucide-react';
+import { Building2, Users, BarChart3, LayoutDashboard, LogIn, LogOut, ShieldCheck, Package, Sliders, FileText, Sun, Moon, Menu, X, Link2, GraduationCap, IdCard, UserCog, BookOpen } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 interface StoredUser {
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/relatorios-sei', label: 'Instrução SEI', icon: FileText, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
   { href: '/integracao', label: 'Integração', icon: Link2, roles: ['gestor', 'executor', 'apoio_exclusivo'] },
   { href: '/capacitacao', label: 'Capacitação', icon: GraduationCap },
+  { href: '/documentacao', label: 'Documentação', icon: BookOpen },
   { href: '/competencias', label: 'Competências (RH)', icon: IdCard, roles: ['rh'] },
   { href: '/usuarios', label: 'Usuários', icon: UserCog, roles: ['gestor'] },
 ];

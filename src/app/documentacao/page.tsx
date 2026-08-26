@@ -291,7 +291,7 @@ export default function DocumentacaoPage() {
                 CNJ 219/2016 &amp; MGI / UnB
               </span>
               <span className="doc-hero-chip doc-hero-chip-green inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold">
-                Página Oculta de Referência (`/documentacao`)
+                Referência Metodológica (`/documentacao`)
               </span>
             </div>
 
