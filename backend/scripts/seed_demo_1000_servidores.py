@@ -76,6 +76,16 @@ HABILIDADES_CATALOGO = [
     "Conhecimento em arquivologia", "Comunicação institucional",
 ]
 
+# Habilidades adicionais, usadas só pela atualização em lote
+# (--atualizar-competencias), para diversificar o que já existe sem
+# invalidar a reprodutibilidade do seed original (random.seed(42)).
+HABILIDADES_CATALOGO_EXTRA = [
+    "Conhecimento em Direito Eleitoral", "Conhecimento em Direito Administrativo",
+    "Perícia técnica e laudos", "Conhecimento em LGPD e proteção de dados",
+    "Conhecimento em Recursos Humanos", "Atendimento processual/cartorário",
+    "Conhecimento em gestão de contratos de TI", "Elaboração de editais",
+]
+
 NOMES_PROPRIOS = [
     "Ana", "Bruno", "Carla", "Daniel", "Elaine", "Fábio", "Gabriela", "Hugo",
     "Isabela", "João", "Karina", "Lucas", "Mariana", "Nelson", "Olívia",
@@ -141,6 +151,133 @@ def limpar(db):
         f"{len(ids_unidades_demo)} unidades, {n_perfis} perfis de vaga, "
         f"{n_perfil_hab} vínculos perfil-habilidade, {n_entregas} entregas."
     )
+
+
+def atualizar_competencias_e_lotacoes(db, seed_variacao: int = 7):
+    """Atualiza (não recria) os servidores demo já existentes:
+    - Expande o catálogo de habilidades com HABILIDADES_CATALOGO_EXTRA.
+    - Redistribui os servidores LOTADOS entre as unidades (Demo) já
+      existentes, recalculando um novo agrupamento déficit/ideal/excesso
+      (mesma proporção 35/30/35 do seed original) - muda quem está em
+      déficit sem criar nenhuma unidade ou servidor novo.
+    - Reatribui escolaridade (garantindo mistura real de médio/superior)
+      e um novo conjunto de habilidades (do catálogo já expandido) para
+      TODOS os servidores demo (lotados, novos e liberados).
+
+    Não cria nem remove nenhuma unidade/servidor - só faz UPDATE no que
+    já existe. Seguro para rodar quantas vezes quiser sobre a mesma base.
+    """
+    random.seed(seed_variacao)  # semente diferente do seed original (42),
+    # para gerar uma combinação nova de habilidades/lotações a cada rodada
+    # intencional desta função, mas ainda reprodutível se você passar o
+    # mesmo valor de novo.
+
+    habilidades_map = {}
+    for nome in HABILIDADES_CATALOGO + HABILIDADES_CATALOGO_EXTRA:
+        h = db.query(Habilidade).filter(Habilidade.nome == nome).first()
+        if not h:
+            h = Habilidade(nome=nome)
+            db.add(h)
+        habilidades_map[nome] = h
+    db.commit()
+    catalogo_completo = list(habilidades_map.values())
+
+    unidades = db.query(Unidade).filter(Unidade.nome.like(f"%{PREFIXO_UNIDADE}%")).all()
+    if not unidades:
+        raise SystemExit(
+            "Nenhuma unidade demo encontrada - rode o seed normal "
+            "(sem --atualizar-competencias) pelo menos uma vez antes."
+        )
+
+    servidores_demo = db.query(Servidor).filter(Servidor.matricula.like(f"{PREFIXO_MATRICULA}%")).all()
+    if not servidores_demo:
+        raise SystemExit("Nenhum servidor demo encontrado - rode o seed normal antes.")
+
+    # --- Redistribuição de lotação (só entre servidores já LOTADOS) ---
+    lotados = [s for s in servidores_demo if s.status_lotacao == StatusLotacaoEnum.lotado]
+    unidades_embaralhadas = unidades[:]
+    random.shuffle(unidades_embaralhadas)
+    n_deficit = int(len(unidades_embaralhadas) * 0.35)
+    n_ideal = int(len(unidades_embaralhadas) * 0.30)
+    grupo_deficit = set(u.id for u in unidades_embaralhadas[:n_deficit])
+    grupo_ideal = set(u.id for u in unidades_embaralhadas[n_deficit:n_deficit + n_ideal])
+
+    fracoes_por_unidade: dict[str, int] = {}
+    total_fracoes = 0
+    for u in unidades:
+        dim = dimensionar_unidade(u)
+        l_ideal = dim["lotacao_ideal"]
+        if u.id in grupo_deficit:
+            fracao = random.uniform(0.4, 0.7)
+        elif u.id in grupo_ideal:
+            fracao = random.uniform(0.9, 1.1)
+        else:
+            fracao = random.uniform(1.3, 1.8)
+        qtd = max(0, round(l_ideal * fracao))
+        fracoes_por_unidade[u.id] = qtd
+        total_fracoes += qtd
+
+    escala = len(lotados) / total_fracoes if total_fracoes > 0 else 1.0
+    escala = max(0.5, min(2.0, escala))
+
+    random.shuffle(lotados)
+    cursor = 0
+    n_deficit_final = 0
+    n_ideal_final = 0
+    n_excesso_final = 0
+    for u in unidades:
+        qtd = max(0, round(fracoes_por_unidade[u.id] * escala))
+        qtd = min(qtd, len(lotados) - cursor)
+        for servidor in lotados[cursor:cursor + qtd]:
+            servidor.unidade_id = u.id
+        cursor += qtd
+        if u.id in grupo_deficit:
+            n_deficit_final += 1
+        elif u.id in grupo_ideal:
+            n_ideal_final += 1
+        else:
+            n_excesso_final += 1
+    # Sobras (arredondamento) ficam na última unidade processada, para não
+    # perder nenhum servidor lotado.
+    if cursor < len(lotados) and unidades:
+        for servidor in lotados[cursor:]:
+            servidor.unidade_id = unidades[-1].id
+
+    # --- Escolaridade e habilidades para TODOS os servidores demo ---
+    niveis = list(NivelEscolaridadeEnum)  # [medio, superior]
+    n_medio = 0
+    n_superior = 0
+    n_sem_escolaridade = 0
+    for idx, servidor in enumerate(servidores_demo):
+        sorteio = random.random()
+        if sorteio < 0.47:
+            servidor.nivel_escolaridade = NivelEscolaridadeEnum.medio
+            n_medio += 1
+        elif sorteio < 0.94:
+            servidor.nivel_escolaridade = NivelEscolaridadeEnum.superior
+            n_superior += 1
+        else:
+            servidor.nivel_escolaridade = None
+            n_sem_escolaridade += 1
+
+        n_habilidades = random.randint(1, 4)
+        servidor.habilidades = random.sample(catalogo_completo, min(n_habilidades, len(catalogo_completo)))
+
+    db.commit()
+
+    print(
+        f"Atualizados {len(servidores_demo)} servidores demo (competências) e "
+        f"{len(lotados)} servidores lotados redistribuídos entre {len(unidades)} unidades."
+    )
+    print(
+        f"Escolaridade: {n_medio} médio, {n_superior} superior, "
+        f"{n_sem_escolaridade} não informado."
+    )
+    print(
+        f"Unidades: {n_deficit_final} em déficit, {n_ideal_final} próximas do ideal, "
+        f"{n_excesso_final} em excesso (grupo-alvo antes do arredondamento)."
+    )
+    print(f"Catálogo de habilidades em uso: {len(catalogo_completo)} itens.")
 
 
 def seed(
@@ -446,6 +583,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--limpar", action="store_true", help="Remove os dados de demonstração em vez de criar")
     parser.add_argument(
+        "--atualizar-competencias",
+        action="store_true",
+        help=(
+            "Não cria nada novo - atualiza escolaridade/habilidades dos servidores demo já "
+            "existentes e redistribui os lotados entre as unidades demo já existentes, "
+            "gerando um novo cenário de déficit/excesso."
+        ),
+    )
+    parser.add_argument(
+        "--seed-variacao",
+        type=int,
+        default=7,
+        help="Semente aleatória usada só por --atualizar-competencias (mude para gerar outra combinação).",
+    )
+    parser.add_argument(
         "--preset",
         choices=["apresentacao"],
         help="Conjuntos pré-definidos de massa de dados para demo/apresentação",
@@ -461,6 +613,8 @@ def main():
     try:
         if args.limpar:
             limpar(db)
+        elif args.atualizar_competencias:
+            atualizar_competencias_e_lotacoes(db, seed_variacao=args.seed_variacao)
         elif args.preset == "apresentacao":
             seed(db, **PRESET_APRESENTACAO)
         elif args.lotados is not None and args.novos is not None and args.liberados is not None:
